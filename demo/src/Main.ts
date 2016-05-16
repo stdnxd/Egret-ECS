@@ -23,15 +23,15 @@ class Main extends egret.DisplayObjectContainer {
         //添加背景
         var rollingBackBitmap:egret.Bitmap = new egret.Bitmap();
         rollingBackBitmap.texture = RES.getRes('rollingBack');
-        rollingBackBitmap.width = 720;
-        rollingBackBitmap.height = 1280;
+        rollingBackBitmap.width = this.stage.stageWidth;
+        rollingBackBitmap.height = this.stage.stageHeight;
         this.stage.addChildAt(rollingBackBitmap,0);
         //添加滑动场景
         this.loadScrollScenesTestCase();
     }
 
     loadScrollScenesTestCase(){
-        ecs.scrollScenes(1280,[
+        ecs.scrollScenes(this.stage.stageHeight,[
             {
                 name:'scene1',
                 scene:RES.getRes('scroll1')
