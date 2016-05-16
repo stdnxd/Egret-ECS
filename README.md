@@ -11,7 +11,7 @@ ECS 为 Entity Component System 的缩写，即“组件实体系统”
 
 ## 快速上手
 
-* 参考[本文档](wiki/Getting Started)
+* 参考[本文档](https://github.com/egret-labs/Egret-ECS/wiki/Getting-Started)
 
 ## 路线图
 
