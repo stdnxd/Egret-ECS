@@ -1,0 +1,8 @@
+{
+  "type":"ecs.Component",
+  "name":"yourscriptname",
+  "id":-1,
+  "node":-1,
+  "properties":{
+  }
+}

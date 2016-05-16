@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:name="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="UTF-8">
+    <title>Hello World!</title>
+    <style>
+      .holder{
+        border:2px dashed #ccc;
+        width:100%;
+        height:80px;
+        margin:20px auto;
+      }
+      .holder.hover{
+        border:2px dashed #333;
+      }
+      h5{
+        color:red
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Egret ECS-Scene-Editor Plugin!</h1>
+    <form>
+      <ul>
+        <li>请输入脚本目录:
+          <textarea class="holder" rows="5" maxrows="5" id="script_input" placeholder="Drag script dir here!"></textarea>
+        </li>
+        <li>请输入场景文件:
+          <textarea class="holder" rows="5" maxrows="5" id="scene_input" placeholder="Drag scene file here!"></textarea>
+        </li>
+      </ul>
+      <input type="button" value="打开" name="execute" onclick=""/>
+    </form>
+    <h5></h5>
+    <script type="text/javascript">
+      'use strict'
+      let ipcRenderer = require('electron').ipcRenderer;
+      const h5 = document.querySelector("h5");
+      ipcRenderer.on('console.log',function(event,args){
+          h5.textContent = args;
+      });
+      window.ondragover=function (e) {
+        e.preventDefault();
+        return false;
+        // body...
+      }
+      window.ondrop = function (e) {
+        e.preventDefault();
+        return false;
+        // body...
+      }
+      var script_holder = document.getElementById("script_input");
+      var scene_holder = document.getElementById("scene_input");
+      console.log("script_holder:",script_holder,script_holder.id);
+      console.log("scene_holder:",scene_holder,scene_holder.id);
+      var ON_DRAG_OVER = function() {
+          this.className="holder hover";
+          return false;
+      };
+      var ON_DRAG_LEAVE = function(){
+          this.className='holder';
+          return false;
+      };
+      var ON_DROP = function(e){
+          e.preventDefault();
+          console.log(e.dataTransfer);
+          for(var i=0;i<e.dataTransfer.files.length;i++){
+              let path = e.dataTransfer.files[i].path;
+              console.log(this);
+              if(this.id === "script_input"){
+                script_holder.value = path;
+                let scriptor = require('electron').remote['require']('./scriptcollector');
+                console.log("scriptor:",scriptor.searchDir(path));
+              }else
+              if(this.id === "scene_input"){
+                scene_holder.value = path;
+              }
+              execute();
+          }
+          return false;
+      };
+
+      script_holder.ondragover = ON_DRAG_OVER;
+      scene_holder.ondragover = ON_DRAG_OVER;
+      script_holder.ondragleave=ON_DRAG_LEAVE;
+      scene_holder.ondragleave=ON_DRAG_LEAVE;
+      script_holder.ondrop = ON_DROP.bind(script_holder);
+      scene_holder.ondrop = ON_DROP.bind(scene_holder);
+
+      function execute(){
+          if(script_holder.value === "" || scene_holder.value === ""){
+              h5.textContent = "路径为空";
+              return;
+          }
+          console.log(script_holder.value,scene_holder.value);
+          ipcRenderer.send('path-got',scene_holder.value);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+    "type": "ecs.Node",
+    "name": "NewlyBuiltNode",
+    "id": -1,
+    "parent": -1,
+    "properties": {
+      "x": 0,
+      "y": 0,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "width": 0,
+      "height": 0,
+      "alpha": 1,
+      "color": "#ffffff"
+    },
+    "children":[],
+    "components":[]
+}

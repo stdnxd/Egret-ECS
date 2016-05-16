@@ -1,0 +1,15 @@
+{
+  "type":"egret.TextField",
+  "name":"Label",
+  "id":-1,
+  "node":-1,
+  "properties":{
+    "stroke":1,
+    "strokeColor_des":"0x111111",
+    "strokeColor":1118481,
+    "enableWrapText":true,
+    "textAlign":"CENTER",
+    "text":"Egret ECS",
+    "size":16
+  }
+}

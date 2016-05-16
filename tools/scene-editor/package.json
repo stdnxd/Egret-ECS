@@ -1,0 +1,44 @@
+{
+  "name": "scene-editor",
+  "version": "1.0.0",
+  "description": "a standalone scene editor app for egret ECS frame",
+  "main": "main.js",
+  "scripts": {
+    "debug": "node editor/server.js",
+    "deploy": "webpack -p --config editor/webpack.production.config.js",
+    "start": "electron main.js",
+    "mac-bundle": "electron-packager . EgretECS --platform=darwin --arch=x64 --version=0.36.9 --ignore=node_modules/electron-prebuilt && cp info.plist EgretECS-darwin-x64/EgretECS.app/Contents/Info.plist && cp icon.icns EgretECS-darwin-x64/EgretECS.app/Contents/Resources/atom.icns"
+  },
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial"
+  ],
+  "author": "Egret",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": "https://github.com/atom/electron-quick-start/issues"
+  },
+  "devDependencies": {
+    "webpack": "^1.12.2",
+    "babel-core": "^6.0.20",
+    "babel-eslint": "^4.1.3",
+    "babel-loader": "^6.0.1",
+    "babel-preset-es2015": "^6.0.15",
+    "babel-preset-react": "^6.0.15",
+    "babel-preset-stage-0": "^6.0.15",
+    "eslint": "^1.10.3",
+    "eslint-plugin-react": "^3.6.2",
+    "react-hot-loader": "^1.3.0",
+    "webpack-dev-server": "^1.12.1",
+    "antd": "^0.12.13",
+    "css-loader": "^0.23.1",
+    "react": "^0.14.6",
+    "react-dom": "^0.14.6",
+    "style-loader": "^0.13.1",
+    "json-loader":"^0.5.4",
+    "electron-prebuilt": "^0.36.0",
+    "electron-packager": "latest"
+  }
+}
