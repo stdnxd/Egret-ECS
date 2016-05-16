@@ -29,14 +29,38 @@ try{
         //args = args.split('.')[0]+'.json';
         //sceneNode = electron.remote['require'](args);
         sceneNode = readSceneFile(args);
-        TOP_REFERENCE.setProps({scene:sceneNode});
+        TOP_REFERENCE.setState({scene:sceneNode});
     });
-    SCRIPTS= electron.remote['global']['ecs'].scripts;
+    console.log("remote",electron.remote);
+    console.log("ecs",electron.remote.getGlobal("ecs"));
+    SCRIPTS= electron.remote.getGlobal("ecs").scripts;
 }catch(err){
     console.log(err);
 }
 if(SCRIPTS == null){
-    SCRIPTS = {test1:{},test2:{},test3:{}}
+    SCRIPTS =
+    {
+        test1:{
+            a:1,
+            b:true,
+            c:"haha",
+            d:{
+                "default":null,
+                type:"egret.TextField"
+            }
+        },test2:{
+            links:[
+                "http://baidu.com",
+                "http://taobao.com",
+                "http://123.57.70.115"
+            ]
+        },test3:{
+            complicated:{
+                "default":[],
+                type:["ecs.Node"]
+            }
+        }
+    }
 }
 console.log('scripts',SCRIPTS);
 sceneNode = require('./testAnim.scene');
@@ -74,6 +98,17 @@ const NodeTree = React.createClass({
             selected:null
         }
     },
+    //用于选择脚本
+    getScriptSelectOptions(){
+        let scripts = [];
+        scripts.push(<option value="">选择脚本</option>);
+        for(let script in SCRIPTS){
+            scripts.push(
+                <option value={script}>{script}</option>
+            )
+        }
+        return scripts;
+    },
     //节点的关系
     parseTree(topSceneNodes){
         var ret = [];
@@ -86,13 +121,13 @@ const NodeTree = React.createClass({
             IDGen.setAllocated(sceneNode.id);
             sceneNode.components.forEach(component=>IDGen.setAllocated(component.id));
 
-            let scripts = [];
-            scripts.push(<option value="">选择脚本</option>);
-            for(let script in SCRIPTS){
-                scripts.push(
-                    <option value={script}>{script}</option>
-                )
-            }
+            //let scripts = [];
+            //scripts.push(<option value="">选择脚本</option>);
+            //for(let script in SCRIPTS){
+            //    scripts.push(
+            //        <option value={script}>{script}</option>
+            //    )
+            //}
 
             const customLabel = (
                 <span className="cus-label">
@@ -135,12 +170,20 @@ const NodeTree = React.createClass({
                             sceneNode.__gui__.selectScript.hidden = true;
                             this.onNodeAdd('Script',sceneNode,e.nativeEvent.target.value);
                             sceneNode.__gui__.selectScript.selectedIndex = 0;
+
+                            sceneNode.__gui__.selectHidden = true;
+                            sceneNode.__gui__.select.hidden = sceneNode.__gui__.selectHidden;
+                            sceneNode.__gui__.select.selectedIndex = 0;
                         }}
                         onBlur={e=>{
                             sceneNode.__gui__.selectScript.hidden = true;
                             sceneNode.__gui__.selectScript.selectedIndex = 0;
+
+                            sceneNode.__gui__.selectHidden = true;
+                            sceneNode.__gui__.select.hidden = sceneNode.__gui__.selectHidden;
+                            sceneNode.__gui__.select.selectedIndex = 0;
                         }}>
-                        {scripts}
+                        {this.getScriptSelectOptions()}
                     </select>
                 </span>
             );
@@ -286,21 +329,47 @@ const NodeTree = React.createClass({
                         sceneNode.__gui__.componentSelect.focus();
                     }}>(+ADD)</span>&nbsp;
                     <select ref={ref=>sceneNode.__gui__.componentSelect = ref} hidden={sceneNode.__gui__.componentSelectHidden} onChange={e=>{
-                            sceneNode.__gui__.selectComponentHidden = true;
-                            sceneNode.__gui__.componentSelect.hidden = sceneNode.__gui__.selectComponentHidden;
-                            this.onComponentAdd(e.nativeEvent.target.value,sceneNode);
-                            sceneNode.__gui__.componentSelect.selectedIndex = 0;//设置默认选中第一项
+                            if(sceneNode.__gui__.componentSelect.value === 'Script'){
+                                sceneNode.__gui__.componentSelectScript.hidden = false;
+                                sceneNode.__gui__.componentSelectScript.focus();
+                            }else{
+                                sceneNode.__gui__.selectComponentHidden = true;
+                                sceneNode.__gui__.componentSelect.hidden = sceneNode.__gui__.selectComponentHidden;
+                                this.onComponentAdd(e.nativeEvent.target.value,sceneNode);
+                                sceneNode.__gui__.componentSelect.selectedIndex = 0;//设置默认选中第一项
+                            }
                         }} onBlur={e=>{
                             console.log('onBlur',e);
-                            sceneNode.__gui__.selectComponentHidden = true;
-                            sceneNode.__gui__.componentSelect.hidden = sceneNode.__gui__.selectComponentHidden;
-                            sceneNode.__gui__.componentSelect.selectedIndex = 0;//设置默认选中第一项
+                            if(sceneNode.__gui__.componentSelectScript.hidden){
+                                sceneNode.__gui__.selectComponentHidden = true;
+                                sceneNode.__gui__.componentSelect.hidden = sceneNode.__gui__.selectComponentHidden;
+                                sceneNode.__gui__.componentSelect.selectedIndex = 0;//设置默认选中第一项
+                            }
                         }}>
                         <option value="">未选择</option>
                         <option value="Label">文本</option>
                         <option value="Sprite">图像</option>
                         <option value="Animation">动画</option>
                         <option value="Script">脚本</option>
+                    </select>
+                    <select ref={ref=>sceneNode.__gui__.componentSelectScript = ref} hidden onChange={e=>{
+                            sceneNode.__gui__.componentSelectScript.hidden = true;
+                            this.onComponentAdd('Script',sceneNode,e.nativeEvent.target.value);
+                            sceneNode.__gui__.componentSelectScript.selectedIndex = 0;
+
+                            sceneNode.__gui__.selectComponentHidden = true;
+                            sceneNode.__gui__.componentSelect.hidden = sceneNode.__gui__.selectComponentHidden;
+                            sceneNode.__gui__.componentSelect.selectedIndex = 0;
+                        }}
+                            onBlur={e=>{
+                            sceneNode.__gui__.componentSelectScript.hidden = true;
+                            sceneNode.__gui__.componentSelectScript.selectedIndex = 0;
+
+                            sceneNode.__gui__.selectComponentHidden = true;
+                            sceneNode.__gui__.componentSelect.hidden = sceneNode.__gui__.selectComponentHidden;
+                            sceneNode.__gui__.componentSelect.selectedIndex = 0;
+                        }}>
+                        {this.getScriptSelectOptions()}
                     </select>
                 </span>
             );
@@ -330,6 +399,11 @@ const NodeTree = React.createClass({
             let component = JSON.parse(JSON.stringify(template));
             component.id = IDGen.allocateId();
             component.node = sceneNode.id;
+            if(script){
+                component.name = script;
+                //在此处给暴露的属性赋初始值
+                component.properties = SCRIPTS[script];
+            }
             sceneNode.components.push(component);
             console.log('onComponentAdd',val,sceneNode);
         }
@@ -372,7 +446,6 @@ const NodeTree = React.createClass({
     },
     onPropsEdit(propsName,val,sceneNode){
         console.log('onPropsEdit',propsName,val,sceneNode);
-
     },
     onRightClick(event){
         console.log('onRightClick',event);
@@ -391,6 +464,7 @@ const NodeTree = React.createClass({
     },
     onDrop(event){
         console.log('onDrop',event);
+
     },
     onSelect(key){
         console.log('onSelect',key);
