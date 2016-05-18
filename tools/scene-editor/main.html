@@ -19,7 +19,8 @@
     </style>
   </head>
   <body>
-    <h1>Egret ECS-Scene-Editor Plugin!</h1>
+    <h1>Egret ECS-Scene-Editor Workspace Config Panel!</h1>
+    <p><script>{document.write(process.env);console.log(process.env)}</script></p>
     <form>
       <ul>
         <li>请输入脚本目录:
@@ -41,6 +42,7 @@
     <script type="text/javascript">
       'use strict'
       let ipcRenderer = require('electron').ipcRenderer;
+      let ROUTE = require('electron').remote.getGlobal("ROUTE");
       var scriptor = require('electron').remote['require']('./scriptcollector');
       const h5 = document.querySelector("h5");
       ipcRenderer.on('console.log',function(event,args){
@@ -85,8 +87,6 @@
               if(this.id === "scene_input"){
                   scene_holder.value = path;
                   scriptor.readSceneFile(path);
-                  let ecs = require('electron').remote.getGlobal("ecs");
-                  ecs.openPath = path;
               }else
               if(this.id === "res_config_input"){
                   res_config_holder.value = path;
@@ -136,7 +136,7 @@
                 return;
           }
           console.log(script_holder.value,scene_holder.value);
-          ipcRenderer.send('path-got',scene_holder.value);
+          ipcRenderer.send(ROUTE.SCENE_OPEN,scene_holder.value);
       }
     </script>
   </body>

@@ -1,5 +1,7 @@
 class Main extends egret.DisplayObjectContainer {
-    util:any = null;
+    //常量
+    constants:any = null;
+    //客户端全局electron对象
     electron:any = null;
     groupCount:number = 0;
     domain:ecs.SceneDomain = null;
@@ -7,21 +9,22 @@ class Main extends egret.DisplayObjectContainer {
         super();
         this.addEventListener(egret.Event.ADDED_TO_STAGE, this.onAddToStage, this);
         this.electron = parent['require']('electron');
-        this.util = this.electron.remote.getGlobal("ecs");
-        this.electron.ipcRenderer.on('show',(event,propName,val,node)=>{
-            console.log('show',propName,val,node);
+        this.constants = this.electron.remote.getGlobal("ecs");
+        const ROUTE = this.electron.remote.getGlobal("ROUTE");
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_EDIT_SHOW,(event,propName,val,node)=>{
+            console.log(ROUTE.PREVIEW_EDIT_SHOW,propName,val,node);
             this.domain.reference[node.id][propName] = parseInt(val);
         });
     }
 
     onAddToStage(){
         RES.addEventListener(RES.ResourceEvent.CONFIG_COMPLETE, this.onConfigComplete, this);
-        RES.loadConfig(this.util.res_config,this.util.res_dir);
+        RES.loadConfig(this.constants.res_config,this.constants.res_dir);
     }
 
     onConfigComplete(){
         RES.addEventListener(RES.ResourceEvent.GROUP_COMPLETE, this.onGroupComplete,this);
-        this.util.configObj.groups.forEach(groupObj=>{
+        this.constants.configObj.groups.forEach(groupObj=>{
             console.log("group name:",groupObj.name);
             RES.loadGroup(groupObj.name);
         });
@@ -30,7 +33,7 @@ class Main extends egret.DisplayObjectContainer {
     onGroupComplete(e:egret.Event){
         this.groupCount ++;
         console.log("group complete:",e['groupName']);
-        if(this.groupCount === this.util.configObj.groups.length){
+        if(this.groupCount === this.constants.configObj.groups.length){
             this.removeEventListener(RES.ResourceEvent.GROUP_COMPLETE,this.onGroupComplete,this);
             this.onPreviewStart();
         }
@@ -39,14 +42,14 @@ class Main extends egret.DisplayObjectContainer {
     onPreviewStart(){
         //添加script到引用池
         this.addScripts();
-        this.preview(this.util.openObj);
+        this.preview(this.constants.openObj);
     }
 
     addScripts(){
         let i = -1;
-        for(let scriptName in this.util.scripts){
+        for(let scriptName in this.constants.scripts){
             ecs.global_ref[scriptName] = i;
-            ecs.global_ref[i] = {properties:this.util.scripts[scriptName]};
+            ecs.global_ref[i] = {properties:this.constants.scripts[scriptName]};
             i--;
         }
     }

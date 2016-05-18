@@ -22,13 +22,16 @@ IDGen.setAllocated = function(id){
         IDGen.start = id;
     }
 }
-
+let ROUTE = null;
 try{
     electron = parent['require']('electron');
-    electron.ipcRenderer.on('path-init',function(event,args){
+    console.log("electron",electron);
+    console.log("electron.remote",electron.remote);
+    ROUTE = electron.remote.getGlobal("ROUTE");
+    electron.ipcRenderer.on(ROUTE.SCENE_OPEN,function(event,sceneFilePath){
         //args = args.split('.')[0]+'.json';
         //sceneNode = electron.remote['require'](args);
-        sceneNode = readSceneFile(args);
+        sceneNode = readSceneFile(sceneFilePath);
         TOP_REFERENCE.setState({scene:sceneNode});
     });
     console.log("remote",electron.remote);
@@ -446,8 +449,8 @@ const NodeTree = React.createClass({
     },
     onPropsEdit(propsName,val,sceneNode){
         console.log('onPropsEdit',propsName,val,sceneNode);
-        if(electron){
-            electron.ipcRenderer.send("edit",propsName,val,sceneNode);
+        if(electron && ROUTE){
+            electron.ipcRenderer.send(ROUTE.PREVIEW_EDIT_SHOW,propsName,val,sceneNode);
         }
     },
     onRightClick(event){

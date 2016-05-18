@@ -27,6 +27,7 @@ function searchDir(path) {
 
 function readSceneFile(sceneFilePath){
     global['ecs'].openObj = JSON.parse(FileUtil.read(sceneFilePath));
+    global['ecs'].openPath = sceneFilePath;
     return global['ecs'].openObj;
 }
 

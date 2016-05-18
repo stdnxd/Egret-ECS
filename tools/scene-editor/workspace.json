@@ -1,0 +1,19 @@
+{
+  "version":"1.0.0",
+  "projects":[
+    {
+      "name":"me_first",
+      "script_dir":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/bin-debug/scripts",
+      "res_config":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/resource/default.res.json",
+      "res_dir":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/resource",
+      "open_path":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/resource/scene/poster/scroll1.scene"
+    },
+    {
+      "name":"me_second",
+      "script_dir":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/bin-debug/scripts",
+      "res_config":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/resource/default.res.json",
+      "res_dir":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/resource",
+      "open_path":"/Users/jackyanjiaqi/EgretWorkspace/Egret-ECS/demo/resource/scene/game/testAnim.scene"
+    }
+  ]
+}
