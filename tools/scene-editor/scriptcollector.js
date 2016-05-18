@@ -1,14 +1,19 @@
 'use strict'
 var FileUtil = require("./utils/FileUtil");
 global['ecs'] = {
-    scripts:{}
+    scripts:{},
+    configObj:null,
+    openObj:null,
+    res_config:"",//资源配置文件
+    res_dir:"",//资源文件根目录
+    openPath:""//打开的文件地址
 }
 
 global['ecs'].Class = function(id,name,obj){
     global['ecs'].scripts[name] = obj.properties;
 }
 
-function searchDir(path){
+function searchDir(path) {
     var fileList = FileUtil.getDirectoryAllListing(path);
     //readFromExternalJs(fileList[6]);
     //readFromExternalJs(fileList[7]);
@@ -18,6 +23,16 @@ function searchDir(path){
     //readFromExternalJs(fileList[11]);
     fileList.forEach(readFromExternalJs);
     return global['ecs'].scripts;
+}
+
+function readSceneFile(sceneFilePath){
+    global['ecs'].openObj = JSON.parse(FileUtil.read(sceneFilePath));
+    return global['ecs'].openObj;
+}
+
+function readResConfig(resConfigPath){
+    global['ecs'].configObj = JSON.parse(FileUtil.read(resConfigPath));
+    return global['ecs'].configObj;
 }
 
 function readFromExternalJs(filePath){
@@ -31,3 +46,5 @@ function readFromExternalJs(filePath){
 }
 
 exports.searchDir = searchDir;
+exports.readResConfig = readResConfig;
+exports.readSceneFile = readSceneFile;

@@ -24,7 +24,7 @@ IDGen.setAllocated = function(id){
 }
 
 try{
-    electron = global['require']('electron');
+    electron = parent['require']('electron');
     electron.ipcRenderer.on('path-init',function(event,args){
         //args = args.split('.')[0]+'.json';
         //sceneNode = electron.remote['require'](args);
@@ -446,6 +446,9 @@ const NodeTree = React.createClass({
     },
     onPropsEdit(propsName,val,sceneNode){
         console.log('onPropsEdit',propsName,val,sceneNode);
+        if(electron){
+            electron.ipcRenderer.send("edit",propsName,val,sceneNode);
+        }
     },
     onRightClick(event){
         console.log('onRightClick',event);

@@ -16,13 +16,18 @@ ipcMain.on('init-send',function (event,arg) {
 	event.sender.send('console.log',arg+' named Jack!');
 })
 
+ipcMain.on('edit',function(event,arg1,arg2,arg3){
+	event.sender.send('show',arg1,arg2,arg3);
+});
+
 ipcMain.on('path-got',function(event,args){
 	// jumpTo('http://123.57.70.115/beta/egretpptdemo');
-	jumpTo('file://' + __dirname + '/editor/index.html',function(){
+	jumpTo('file://' + __dirname + '/panel.html',function(){
 		event.sender.send('path-init',args);
 	});
+	//jumpTo("file://" + __dirname + "/previewer/index.html");
 	// event.sender.send('console.log',fs.readFileSync(arg,'utf-8'));
-})
+});
 
 function jumpTo(jumpUrl,didFinishLoadCb){
 	if(!mainWindow){
@@ -55,7 +60,7 @@ function createWindow () {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
-    mainWindow = null;
+    //mainWindow = null;
   });
 }
 
@@ -79,7 +84,7 @@ app.on('activate', function () {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
-    createWindow();
-    // jumpTo('file://' + __dirname + '/index.html');
+    //createWindow();
+     jumpTo('file://' + __dirname + '/main.html');
   }
 });

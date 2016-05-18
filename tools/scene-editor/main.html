@@ -7,7 +7,7 @@
       .holder{
         border:2px dashed #ccc;
         width:100%;
-        height:80px;
+        height:50px;
         margin:20px auto;
       }
       .holder.hover{
@@ -23,10 +23,16 @@
     <form>
       <ul>
         <li>请输入脚本目录:
-          <textarea class="holder" rows="5" maxrows="5" id="script_input" placeholder="Drag script dir here!"></textarea>
+            <textarea class="holder" rows="5" maxrows="5" id="script_input" placeholder="Drag script dir here!"></textarea>
+        </li>
+        <li>请输入使用到的资源配置文件:
+            <textarea class="holder" rows="5" maxrows="5" id="res_config_input" placeholder="Drag *.res.json here!"></textarea>
+        </li>
+        <li>请输入资源文件根目录:
+            <textarea class="holder" rows="5" maxrows="5" id="res_dir_input" placeholder="Drag res dir here!"></textarea>
         </li>
         <li>请输入场景文件:
-          <textarea class="holder" rows="5" maxrows="5" id="scene_input" placeholder="Drag scene file here!"></textarea>
+            <textarea class="holder" rows="5" maxrows="5" id="scene_input" placeholder="Drag scene file here!"></textarea>
         </li>
       </ul>
       <input type="button" value="打开" name="execute" onclick=""/>
@@ -35,6 +41,7 @@
     <script type="text/javascript">
       'use strict'
       let ipcRenderer = require('electron').ipcRenderer;
+      var scriptor = require('electron').remote['require']('./scriptcollector');
       const h5 = document.querySelector("h5");
       ipcRenderer.on('console.log',function(event,args){
           h5.textContent = args;
@@ -51,6 +58,10 @@
       }
       var script_holder = document.getElementById("script_input");
       var scene_holder = document.getElementById("scene_input");
+      var res_config_holder = document.getElementById("res_config_input");
+      var res_dir_holder = document.getElementById("res_dir_input");
+      let holders = [];
+      holders.push(script_holder,scene_holder,res_config_holder,res_dir_holder);
       console.log("script_holder:",script_holder,script_holder.id);
       console.log("scene_holder:",scene_holder,scene_holder.id);
       var ON_DRAG_OVER = function() {
@@ -68,29 +79,61 @@
               let path = e.dataTransfer.files[i].path;
               console.log(this);
               if(this.id === "script_input"){
-                script_holder.value = path;
-                let scriptor = require('electron').remote['require']('./scriptcollector');
-                console.log("scriptor:",scriptor.searchDir(path));
+                  script_holder.value = path;
+                  console.log("scriptor:",scriptor.searchDir(path));
               }else
               if(this.id === "scene_input"){
-                scene_holder.value = path;
+                  scene_holder.value = path;
+                  scriptor.readSceneFile(path);
+                  let ecs = require('electron').remote.getGlobal("ecs");
+                  ecs.openPath = path;
+              }else
+              if(this.id === "res_config_input"){
+                  res_config_holder.value = path;
+                  console.log("resConfigObj",scriptor.readResConfig(path));
+                  let ecs = require('electron').remote.getGlobal("ecs");
+                  ecs.res_config = path;
+                  console.log("res_config:",ecs.res_config);
+              }else
+              if(this.id === "res_dir_input"){
+                  res_dir_holder.value = path;
+                  let ecs = require('electron').remote.getGlobal("ecs");
+                  ecs.res_dir = path;
+                  console.log("res_dir:",ecs.res_dir);
               }
               execute();
           }
           return false;
       };
+      //绑定拖拽事件
+      holders.forEach(function(holder){
+          holder.ondragover = ON_DRAG_OVER;
+          holder.ondragleave = ON_DRAG_LEAVE;
+          holder.ondrop = ON_DROP.bind(holder);
+      });
 
-      script_holder.ondragover = ON_DRAG_OVER;
-      scene_holder.ondragover = ON_DRAG_OVER;
-      script_holder.ondragleave=ON_DRAG_LEAVE;
-      scene_holder.ondragleave=ON_DRAG_LEAVE;
-      script_holder.ondrop = ON_DROP.bind(script_holder);
-      scene_holder.ondrop = ON_DROP.bind(scene_holder);
+//      script_holder.ondragover = ON_DRAG_OVER;
+//      scene_holder.ondragover = ON_DRAG_OVER;
+//      res_config_holder.ondragover = ON_DRAG_OVER;
+//      res_dir_holder.ondragover = ON_DRAG_OVER;
+//
+//      script_holder.ondragleave=ON_DRAG_LEAVE;
+//      scene_holder.ondragleave=ON_DRAG_LEAVE;
+//      res_config_holder.ondragover = ON_DRAG_LEAVE;
+//      res_dir_holder.ondragover = ON_DRAG_LEAVE;
+//
+//      script_holder.ondrop = ON_DROP.bind(script_holder);
+//      scene_holder.ondrop = ON_DROP.bind(scene_holder);
+//      res_config_holder.ondrop = ON_DROP.bind(res_config_holder);
+//      res_dir_holder.ondrop = ON_DROP.bind(res_dir_holder);
 
       function execute(){
-          if(script_holder.value === "" || scene_holder.value === ""){
-              h5.textContent = "路径为空";
-              return;
+          if(script_holder.value === "" ||
+              scene_holder.value === "" ||
+              res_config_holder.value === "" ||
+              res_dir_holder.value === ""){
+                h5.textContent = "路径为空";
+                return;
           }
           console.log(script_holder.value,scene_holder.value);
           ipcRenderer.send('path-got',scene_holder.value);

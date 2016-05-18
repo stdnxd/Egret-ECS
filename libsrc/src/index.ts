@@ -436,7 +436,7 @@ module ecs{
             topIds:null
         };
         const topIds = parseBegin(scene,global_ref[sceneName].reference,topContainer,sceneName);
-        global_ref.topIds = topIds;
+        global_ref[sceneName].topIds = topIds;
         return global_ref[sceneName];
     }
 
