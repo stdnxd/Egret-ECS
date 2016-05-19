@@ -28,16 +28,16 @@ ipcMain.on(ROUTE.PREVIEW_EDIT_SHOW,function(event,arg1,arg2,arg3){
 
 ipcMain.on(ROUTE.SCENE_OPEN,function(event,scenePath){
 	// jumpTo('http://123.57.70.115/beta/egretpptdemo');
-	jumpTo('file://' + __dirname + '/panel.html',function(){
+	jumpTo('file://' + __dirname + '/panels/editor_container.html',function(){
 		event.sender.send(ROUTE.SCENE_OPEN,scenePath);
 	});
 	//jumpTo("file://" + __dirname + "/previewer/index.html");
 	// event.sender.send('console.log',fs.readFileSync(arg,'utf-8'));
 });
 
-ipcMain.on(ROUTE.WORKSPACE_EDIT,function(event,args){
-	jumpTo('file://'+ __dirname + '/main.html',function(){
-		event.sender.send(ROUTE.WORKSPACE_EDIT,args);
+ipcMain.on(ROUTE.WORKSPACE_EDIT,function(event,configObj){
+	jumpTo('file://'+ __dirname + '/panels/ws_edit.html',function(){
+		event.sender.send(ROUTE.WORKSPACE_EDIT,configObj);
 	})
 });
 
@@ -86,7 +86,7 @@ function createWindow () {
 // app.on('ready', createWindow);
 app.on('ready',function () {
 	let workspace_config = JSON.parse(FileUtil.read(FileUtil.joinPath(__dirname,"workspace.json")));
-	jumpTo('file://' + __dirname + '/workspace.html',function(){
+	jumpTo('file://' + __dirname + '/panels/ws_select.html',function(){
 		mainWindow.webContents.send(ROUTE.WORKSPACE_INIT,workspace_config);
 	});
 })
@@ -105,6 +105,9 @@ app.on('activate', function () {
   // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
     //createWindow();
-     jumpTo('file://' + __dirname + '/main.html');
+	  let workspace_config = JSON.parse(FileUtil.read(FileUtil.joinPath(__dirname,"workspace.json")));
+	  jumpTo('file://' + __dirname + '/panels/ws_select.html',function(){
+		  mainWindow.webContents.send(ROUTE.WORKSPACE_INIT,workspace_config);
+	  });
   }
 });

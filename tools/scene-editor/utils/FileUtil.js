@@ -314,6 +314,7 @@ function findFiles(filePath, list, extension, filterFunc, checkDir) {
         }
     }
 }
+exports.findFiles = findFiles;
 function exists(path) {
     path = escapePath(path);
     return FS.existsSync(path);

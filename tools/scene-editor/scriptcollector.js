@@ -25,6 +25,12 @@ function searchDir(path) {
     return global['ecs'].scripts;
 }
 
+function listAvailableSceneFiles(dir){
+    let ret = [];
+    FileUtil.findFiles(dir,ret,'scene');
+    return ret;
+}
+
 function readSceneFile(sceneFilePath){
     global['ecs'].openObj = JSON.parse(FileUtil.read(sceneFilePath));
     global['ecs'].openPath = sceneFilePath;
@@ -49,3 +55,4 @@ function readFromExternalJs(filePath){
 exports.searchDir = searchDir;
 exports.readResConfig = readResConfig;
 exports.readSceneFile = readSceneFile;
+exports.listAvailableSceneFiles = listAvailableSceneFiles;

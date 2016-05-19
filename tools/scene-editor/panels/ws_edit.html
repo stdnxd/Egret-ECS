@@ -21,7 +21,6 @@
   <body>
     <h1>Egret ECS-Scene-Editor Workspace Config Panel!</h1>
     <p><script>{document.write(process.env);console.log(process.env)}</script></p>
-    <form>
       <ul>
         <li>请输入脚本目录:
             <textarea class="holder" rows="5" maxrows="5" id="script_input" placeholder="Drag script dir here!"></textarea>
@@ -32,19 +31,37 @@
         <li>请输入资源文件根目录:
             <textarea class="holder" rows="5" maxrows="5" id="res_dir_input" placeholder="Drag res dir here!"></textarea>
         </li>
-        <li>请输入场景文件:
+        <li>场景文件:
+            <div id="selectfrom"></div>
+            <div>
+                <p>输入相对路径和名称:</p>
+                <span><input id="create_input" type="text" oninput="onNewSceneNameInput(this.value)"/></span>
+                <p>请输入设计稿 宽 x 高:</p>
+                <span>
+                    <input id="design_width_input" type="number">x<input id="design_height_input" type="number"/>
+                </span>
+                <p><button onclick="createNew()">新建</button></p>
+            </div>
             <textarea class="holder" rows="5" maxrows="5" id="scene_input" placeholder="Drag scene file here!"></textarea>
         </li>
       </ul>
-      <input type="button" value="打开" name="execute" onclick=""/>
-    </form>
+    <button onclick="execute()">打开</button>
     <h5></h5>
     <script type="text/javascript">
       'use strict'
       let ipcRenderer = require('electron').ipcRenderer;
       let ROUTE = require('electron').remote.getGlobal("ROUTE");
+
       var scriptor = require('electron').remote['require']('./scriptcollector');
       const h5 = document.querySelector("h5");
+      ipcRenderer.on(ROUTE.WORKSPACE_EDIT,function(event,args){
+          if(args){
+              metaSetScriptPath(args.script_dir);
+              metaSetResconfigPath(args.res_config);
+              metaSetResDirPath(args.res_dir);
+              metaSetScenePath(args.open_path);
+          }
+      });
       ipcRenderer.on('console.log',function(event,args){
           h5.textContent = args;
       });
@@ -81,25 +98,16 @@
               let path = e.dataTransfer.files[i].path;
               console.log(this);
               if(this.id === "script_input"){
-                  script_holder.value = path;
-                  console.log("scriptor:",scriptor.searchDir(path));
+                  metaSetScriptPath(path);
               }else
               if(this.id === "scene_input"){
-                  scene_holder.value = path;
-                  scriptor.readSceneFile(path);
+                  metaSetScenePath(path);
               }else
               if(this.id === "res_config_input"){
-                  res_config_holder.value = path;
-                  console.log("resConfigObj",scriptor.readResConfig(path));
-                  let ecs = require('electron').remote.getGlobal("ecs");
-                  ecs.res_config = path;
-                  console.log("res_config:",ecs.res_config);
+                  metaSetResconfigPath(path);
               }else
               if(this.id === "res_dir_input"){
-                  res_dir_holder.value = path;
-                  let ecs = require('electron').remote.getGlobal("ecs");
-                  ecs.res_dir = path;
-                  console.log("res_dir:",ecs.res_dir);
+                  metaSetResDirPath(path);
               }
               execute();
           }
@@ -127,6 +135,47 @@
 //      res_config_holder.ondrop = ON_DROP.bind(res_config_holder);
 //      res_dir_holder.ondrop = ON_DROP.bind(res_dir_holder);
 
+      function metaSetScriptPath(path){
+          script_holder.value = path;
+          console.log("scriptor:",scriptor.searchDir(path));
+      }
+
+      function metaSetScenePath(path){
+          scene_holder.value = path;
+          scriptor.readSceneFile(path);
+      }
+
+      function metaSetResconfigPath(path){
+          res_config_holder.value = path;
+          console.log("resConfigObj",scriptor.readResConfig(path));
+          let ecs = require('electron').remote.getGlobal("ecs");
+          ecs.res_config = path;
+          console.log("res_config:",ecs.res_config);
+      }
+
+      function metaSetResDirPath(path){
+          res_dir_holder.value = path;
+          let ecs = require('electron').remote.getGlobal("ecs");
+          ecs.res_dir = path;
+          console.log("res_dir:",ecs.res_dir);
+          let selects = scriptor.listAvailableSceneFiles(ecs.res_dir);
+          if(selects.length>0){
+              let selectDiv = document.getElementById("selectfrom");
+              let select =
+                      '<select id="select" onchange="onSceneFileSelect(this.value)">' +
+                      '<option value="">选择要打开的场景文件</option>';
+              selects.forEach(function (filePath){
+                  let fileName = filePath.substr(path.length);
+                  select += '<option value="'+filePath+'">'+fileName+'</option>';
+              });
+              select +=
+                      '</select>';
+              selectDiv.innerHTML = select;
+          }
+
+
+      }
+
       function execute(){
           if(script_holder.value === "" ||
               scene_holder.value === "" ||
@@ -137,6 +186,20 @@
           }
           console.log(script_holder.value,scene_holder.value);
           ipcRenderer.send(ROUTE.SCENE_OPEN,scene_holder.value);
+      }
+
+      function onSceneFileSelect(sceneFilePath){
+          scene_holder.value = sceneFilePath;
+      }
+
+      function onNewSceneNameInput(nameInput){
+          console.log("onNewSceneNameInput",nameInput);
+          scene_holder.value = createNewSceneFullpath(nameInput);
+      }
+
+      function createNewSceneFullpath(name){
+          let ecs = require('electron').remote.getGlobal("ecs");
+          return ecs.res_dir + '/' + name + '.scene';
       }
     </script>
   </body>

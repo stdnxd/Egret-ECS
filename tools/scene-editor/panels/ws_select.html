@@ -63,6 +63,14 @@
 
         function onEdit(index){
             console.log("onEdit",index);
+            if(config) {
+                if(index !== undefined){
+                    let project = config.projects[index];
+                    ipcRenderer.send(ROUTE.WORKSPACE_EDIT,project);
+                }else{
+                    ipcRenderer.send(ROUTE.WORKSPACE_EDIT);
+                }
+            }
         }
     </script>
 </body>
