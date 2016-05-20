@@ -15,6 +15,14 @@ class Main extends egret.DisplayObjectContainer {
             console.log(ROUTE.PREVIEW_EDIT_SHOW,propName,val,node);
             this.domain.reference[node.id][propName] = parseInt(val);
         });
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_NODE_SELECT,(event,node,isSelect)=>{
+            console.log('on_node_select',node,this.domain.reference[node.id],isSelect);
+            if(isSelect){
+                ecs.selectNode(this.domain.reference[node.id]);
+            }else{
+                ecs.cancelSelectNode(this.domain.reference[node.id]);
+            }
+        });
     }
 
     onAddToStage(){
@@ -55,6 +63,7 @@ class Main extends egret.DisplayObjectContainer {
     }
 
     preview(scene){
+        ecs.MODE = ecs.MODE_PREVIEW;
         this.domain = ecs.parseScene(scene,null);
         //仅装入静态实例
         this.domain.topIds.forEach(topId=>{

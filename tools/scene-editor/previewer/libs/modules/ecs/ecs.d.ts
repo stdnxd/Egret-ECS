@@ -4,6 +4,9 @@
  *
  */
 declare module ecs {
+    const MODE_RUNTIME: string;
+    const MODE_PREVIEW: string;
+    var MODE: string;
     interface ScrollingHandler {
         (progress: number, isScrollIn: boolean): void;
     }
@@ -81,6 +84,8 @@ declare module ecs {
     function scrollTo(sceneIndex: number, callBack?: Function): void;
     function parseScene(scene: any[], topContainer?: egret.DisplayObjectContainer, sceneName?: string): SceneDomain;
     function saveScene(): boolean;
+    function selectNode(target: Node): void;
+    function cancelSelectNode(target: Node): void;
     function Class(id: number, name: string, raw: any): void;
     /**
      * 使用此函数深度拷贝并返回一个新的节点

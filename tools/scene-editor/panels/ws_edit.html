@@ -120,21 +120,6 @@
           holder.ondrop = ON_DROP.bind(holder);
       });
 
-//      script_holder.ondragover = ON_DRAG_OVER;
-//      scene_holder.ondragover = ON_DRAG_OVER;
-//      res_config_holder.ondragover = ON_DRAG_OVER;
-//      res_dir_holder.ondragover = ON_DRAG_OVER;
-//
-//      script_holder.ondragleave=ON_DRAG_LEAVE;
-//      scene_holder.ondragleave=ON_DRAG_LEAVE;
-//      res_config_holder.ondragover = ON_DRAG_LEAVE;
-//      res_dir_holder.ondragover = ON_DRAG_LEAVE;
-//
-//      script_holder.ondrop = ON_DROP.bind(script_holder);
-//      scene_holder.ondrop = ON_DROP.bind(scene_holder);
-//      res_config_holder.ondrop = ON_DROP.bind(res_config_holder);
-//      res_dir_holder.ondrop = ON_DROP.bind(res_dir_holder);
-
       function metaSetScriptPath(path){
           script_holder.value = path;
           console.log("scriptor:",scriptor.searchDir(path));
@@ -184,7 +169,7 @@
                 h5.textContent = "路径为空";
                 return;
           }
-          console.log(script_holder.value,scene_holder.value);
+          metaSetScenePath(scene_holder.value);
           ipcRenderer.send(ROUTE.SCENE_OPEN,scene_holder.value);
       }
 
@@ -200,6 +185,41 @@
       function createNewSceneFullpath(name){
           let ecs = require('electron').remote.getGlobal("ecs");
           return ecs.res_dir + '/' + name + '.scene';
+      }
+
+      function createNew(){
+          let FileUtil = require('electron').remote.getGlobal("FileUtil");
+          let design_width = document.getElementById("design_width_input").value;
+          let design_height = document.getElementById("design_height_input").value;
+          let initScene = [
+              {
+                  "type": "ecs.Node",
+                  "name": "NewlyBuiltNode",
+                  "id": 1,
+                  "parent": null,
+                  "properties": {
+                      "x": 0,
+                      "y": 0,
+                      "rotation": 0,
+                      "scaleX": 1,
+                      "scaleY": 1,
+                      "anchorX": 0.5,
+                      "anchorY": 0.5,
+                      "width": 0,
+                      "height": 0,
+                      "alpha": 1,
+                      "color": "#ffffff"
+                  },
+                  "children":[],
+                  "components":[]
+              }
+          ];
+          initScene[0].properties.width = design_width;
+          initScene[0].properties.height = design_height;
+          initScene[0].properties.x = design_width/2;
+          initScene[0].properties.y = design_height/2;
+          FileUtil.save(scene_holder.value,JSON.stringify(initScene));
+          execute();
       }
     </script>
   </body>

@@ -6,7 +6,7 @@ const electron = require('electron');
 global['ROUTE'] = require('./route');
 global['SCRIPTOR'] = require('./scriptcollector');
 
-const FileUtil = require('./utils/FileUtil');
+global['FileUtil'] = require('./utils/FileUtil');
 // Module to control application life.
 const app = electron.app;
 // Module to create native browser window.
@@ -24,6 +24,10 @@ ipcMain.on('init-send',function (event,arg) {
 
 ipcMain.on(ROUTE.PREVIEW_EDIT_SHOW,function(event,arg1,arg2,arg3){
 	event.sender.send(ROUTE.PREVIEW_EDIT_SHOW,arg1,arg2,arg3);
+});
+
+ipcMain.on(ROUTE.PREVIEW_NODE_SELECT,function(event,node,isSelected){
+	event.sender.send(ROUTE.PREVIEW_NODE_SELECT,node,isSelected);
 });
 
 ipcMain.on(ROUTE.SCENE_OPEN,function(event,scenePath){

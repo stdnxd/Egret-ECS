@@ -17,6 +17,15 @@ var Main = (function (_super) {
             console.log(ROUTE.PREVIEW_EDIT_SHOW, propName, val, node);
             _this.domain.reference[node.id][propName] = parseInt(val);
         });
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_NODE_SELECT, function (event, node, isSelect) {
+            console.log('on_node_select', node, _this.domain.reference[node.id], isSelect);
+            if (isSelect) {
+                ecs.selectNode(_this.domain.reference[node.id]);
+            }
+            else {
+                ecs.cancelSelectNode(_this.domain.reference[node.id]);
+            }
+        });
     }
     var d = __define,c=Main,p=c.prototype;
     p.onAddToStage = function () {
@@ -53,6 +62,7 @@ var Main = (function (_super) {
     };
     p.preview = function (scene) {
         var _this = this;
+        ecs.MODE = ecs.MODE_PREVIEW;
         this.domain = ecs.parseScene(scene, null);
         //仅装入静态实例
         this.domain.topIds.forEach(function (topId) {

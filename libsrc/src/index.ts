@@ -4,7 +4,9 @@
  *
  */
 module ecs{
-
+    export const MODE_RUNTIME = "runtime";
+    export const MODE_PREVIEW = "preview";
+    export var MODE = MODE_RUNTIME;
     export interface ScrollingHandler{
         (progress:number,isScrollIn:boolean):void;
     }
@@ -53,9 +55,9 @@ module ecs{
         }
 
         set visualable (val){
-            if(val !== this._visualable){
+            if(MODE === MODE_PREVIEW || val !== this._visualable){
                 this._visualable = val;
-                if(val){
+                if(MODE === MODE_PREVIEW || val){
                     //组件可视化
                     if(!this._raw){
                         assembleContainer(this);
@@ -482,6 +484,9 @@ module ecs{
     function parseGenNode(nodeWrapper:any,references:any,sceneName?:string){
         var instance = new Node(nodeWrapper);
         references[nodeWrapper.id] = instance;
+        //必要的一步(PREVIEW)
+        instance.visualable = false;
+
         if(nodeWrapper.parent) {
             instance.parent = references[nodeWrapper.parent];
         }
@@ -565,7 +570,13 @@ module ecs{
         /**
          * step1.创建可视化实体并赋给节点_raw
          */
-        var container:egret.DisplayObjectContainer = new egret.DisplayObjectContainer();
+        var container:egret.DisplayObjectContainer = null;
+        if(MODE === MODE_PREVIEW){
+            container = new egret.Sprite();
+        }else
+        if(MODE === MODE_RUNTIME){
+            container = new egret.DisplayObjectContainer();
+        }
         node._raw = container;
         /**
          * step2.绑定节点属性到可视化实体
@@ -842,6 +853,42 @@ module ecs{
                 target[prop] = propsWrapper[prop];
             }
         });
+        previewNode(target);
+    }
+
+    /**
+     * 节点线框模式
+     * @param target
+     */
+    function previewNode(target:Node){
+        if(MODE === MODE_PREVIEW){
+            var graphics:egret.Graphics = (<egret.Sprite>target._raw).graphics;
+            graphics.clear();
+            if(target['isSelected']){
+                graphics.lineStyle(2, 0x0000ee);
+            }else{
+                graphics.lineStyle(2, 0x444444);
+            }
+            graphics.beginFill( 0x000000, 0);
+            graphics.drawRect( 0, 0, target["width"],target["height"]);
+            graphics.endFill();
+        }
+    }
+
+    export function selectNode(target:Node){
+        target['isSelected'] = true;
+        previewNode(target);
+        target.children.forEach(child=>{
+            selectNode(child);
+        });
+    }
+
+    export function cancelSelectNode(target:Node){
+        target['isSelected'] = false;
+        previewNode(target);
+        target.children.forEach(child=>{
+            cancelSelectNode(child);
+        });
     }
     /**
      * 为节点和组件注入通用属性
@@ -961,6 +1008,7 @@ module ecs{
                         this._relative.width = width;
                     }
                     this._raw.width = width;
+                    previewNode(this);
                 }
             },
             height:{
@@ -977,7 +1025,7 @@ module ecs{
                         this._relative.height = height;
                     }
                     this._raw.height = height;
-
+                    previewNode(this);
                 }
             },
             anchorX:{

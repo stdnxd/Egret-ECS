@@ -477,8 +477,16 @@ const NodeTree = React.createClass({
         //this.props.onSelect(this.state.ids[event])
         if(key){
             if(this.state.ids[key]){
+                if(this.state.selected != null){
+                    if(electron && ROUTE){
+                        electron.ipcRenderer.send(ROUTE.PREVIEW_NODE_SELECT,this.state.selected,false);
+                    }
+                }
                 //选中了节点
                 this.setState({selected:this.state.ids[key]});
+                if(electron && ROUTE){
+                    electron.ipcRenderer.send(ROUTE.PREVIEW_NODE_SELECT,this.state.ids[key],true);
+                }
             }else{
                 //选中了非节点
 
@@ -489,6 +497,9 @@ const NodeTree = React.createClass({
             }
         }else{
             //取消选择(无法走到)
+            if(electron && ROUTE){
+                electron.ipcRenderer.send(ROUTE.PREVIEW_NODE_SELECT,this.state.selected,false);
+            }
             this.setState({selected:null});
         }
     },
