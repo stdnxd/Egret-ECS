@@ -11,7 +11,7 @@ global['FileUtil'] = require('./utils/FileUtil');
 const app = electron.app;
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow;
-
+const globalShortcut = require('global-shortcut');
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
@@ -30,13 +30,17 @@ ipcMain.on(ROUTE.PREVIEW_NODE_SELECT,function(event,node,isSelected){
 	event.sender.send(ROUTE.PREVIEW_NODE_SELECT,node,isSelected);
 });
 
+ipcMain.on(ROUTE.PREVIEW_NODE_ADD_REMOVE,function(event,type,addArrayId,nodeWrapper){
+	event.sender.send(ROUTE.PREVIEW_NODE_ADD_REMOVE,type,addArrayId,nodeWrapper);
+});
+
 ipcMain.on(ROUTE.SCENE_OPEN,function(event,scenePath){
 	// jumpTo('http://123.57.70.115/beta/egretpptdemo');
-	jumpTo('file://' + __dirname + '/panels/editor_container.html',function(){
-		event.sender.send(ROUTE.SCENE_OPEN,scenePath);
-	});
+	 jumpTo('file://' + __dirname + '/panels/editor_container.html',function(){
+	 	event.sender.send(ROUTE.SCENE_OPEN,scenePath);
+	 });
 	//jumpTo("file://" + __dirname + "/previewer/index.html");
-	// event.sender.send('console.log',fs.readFileSync(arg,'utf-8'));
+	//event.sender.send('console.log',fs.readFileSync(arg,'utf-8'));
 });
 
 ipcMain.on(ROUTE.WORKSPACE_EDIT,function(event,configObj){
@@ -89,6 +93,9 @@ function createWindow () {
 // initialization and is ready to create browser windows.
 // app.on('ready', createWindow);
 app.on('ready',function () {
+	globalShortcut.register('ctrl+s', function () {
+		mainWindow.webContents.send('global-shortcut', 'save');
+	});
 	let workspace_config = JSON.parse(FileUtil.read(FileUtil.joinPath(__dirname,"workspace.json")));
 	jumpTo('file://' + __dirname + '/panels/ws_select.html',function(){
 		mainWindow.webContents.send(ROUTE.WORKSPACE_INIT,workspace_config);

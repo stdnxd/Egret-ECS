@@ -10,35 +10,35 @@ ecs.Class(12348,"CardManager",
         properties:{
             crystalSystem:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             },
             enemyCardSlot:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             },
             myCardSlot:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             },
             drawCardAnimShower:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             },
             soldierPrefab:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             },
             magicPrefab:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             },
             cardBackPrefab:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             },
             toast:{
                 "default":null,
-                type:ecs.Node
+                type:"ecs.Node"
             }
         },
         start:function(){

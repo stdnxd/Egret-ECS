@@ -11,8 +11,8 @@
       "scaleY": 1,
       "anchorX": 0.5,
       "anchorY": 0.5,
-      "width": 0,
-      "height": 0,
+      "width": 300,
+      "height": 300,
       "alpha": 1,
       "color": "#ffffff"
     },

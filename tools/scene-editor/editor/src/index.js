@@ -4,7 +4,7 @@
 import React,{Component} from 'react';
 import ReactDOM from 'react-dom';
 import 'antd/lib/index.css';
-import { Tree,Popover } from 'antd';
+import { Tree,Popover,Checkbox} from 'antd';
 const TreeNode = Tree.TreeNode;
 let electron = null;
 let sceneNode = null;
@@ -21,8 +21,9 @@ IDGen.setAllocated = function(id){
     if(id > IDGen.start){
         IDGen.start = id;
     }
-}
+};
 let ROUTE = null;
+let UTIL = require('./util');
 try{
     electron = parent['require']('electron');
     console.log("electron",electron);
@@ -34,6 +35,20 @@ try{
         sceneNode = readSceneFile(sceneFilePath);
         TOP_REFERENCE.setState({scene:sceneNode});
     });
+    electron.ipcRenderer.on("global-shortcut",function(event,order){
+        console.log("global-shortcut",order);
+        switch(order){
+            case "save":
+                console.log("global-shortcut",TOP_REFERENCE.state.scene);
+                let string = JSON.stringify(TOP_REFERENCE.state.scene,function(key,value){
+                    if(key === '__gui__')return;
+                    return value;
+                },4);
+                console.log("global-shortcut",string);
+                electron.remote.getGlobal("SCRIPTOR").saveSceneFile(string);
+                break;
+        }
+    });
     console.log("remote",electron.remote);
     console.log("ecs",electron.remote.getGlobal("ecs"));
     SCRIPTS= electron.remote.getGlobal("ecs").scripts;
@@ -43,6 +58,20 @@ try{
 if(SCRIPTS == null){
     SCRIPTS =
     {
+        "Sprite":{
+            "texture":""
+        },
+        "Label":{
+            "stroke":1,
+            "strokeColor":1118481,
+            "enableWrapText":true,
+            "textAlign":"TOP",
+            "text":"TEXT",
+            "size":60
+        },
+        "Animation":{
+            "defaultClip":""
+        },
         test1:{
             a:1,
             b:true,
@@ -51,13 +80,15 @@ if(SCRIPTS == null){
                 "default":null,
                 type:"egret.TextField"
             }
-        },test2:{
+        },
+        test2:{
             links:[
                 "http://baidu.com",
                 "http://taobao.com",
                 "http://123.57.70.115"
             ]
-        },test3:{
+        },
+        test3:{
             complicated:{
                 "default":[],
                 type:["ecs.Node"]
@@ -106,9 +137,13 @@ const NodeTree = React.createClass({
         let scripts = [];
         scripts.push(<option value="">选择脚本</option>);
         for(let script in SCRIPTS){
-            scripts.push(
-                <option value={script}>{script}</option>
-            )
+            if(script !== "Label" &&
+                script !== "Animation" &&
+                script !== "Sprite"){
+                scripts.push(
+                    <option value={script}>{script}</option>
+                )
+            }
         }
         return scripts;
     },
@@ -141,7 +176,8 @@ const NodeTree = React.createClass({
                         sceneNode.__gui__.selectHidden = false;
                         sceneNode.__gui__.select.hidden = sceneNode.__gui__.selectHidden;
                         sceneNode.__gui__.select.focus();
-                    }}>(+add)</span>&nbsp;
+                    }}>(+add<Checkbox defaultChecked={false} onChange={e=>sceneNode.__gui__.isChildAdd = e.target.checked}>child</Checkbox>)</span>&nbsp;
+
                     <select ref={ref=>sceneNode.__gui__.select = ref} hidden={sceneNode.__gui__.selectHidden} onChange={e=>{
                             if(sceneNode.__gui__.select.value === 'Script'){
                                 sceneNode.__gui__.selectScript.hidden = false;
@@ -149,7 +185,7 @@ const NodeTree = React.createClass({
                             }else{
                                 sceneNode.__gui__.selectHidden = true;
                                 sceneNode.__gui__.select.hidden = sceneNode.__gui__.selectHidden;
-                                this.onNodeAdd(e.nativeEvent.target.value,sceneNode);
+                                this.onNodeAdd(e.nativeEvent.target.value,sceneNode,sceneNode.__gui__.isChildAdd);
                                 sceneNode.__gui__.select.selectedIndex = 0;//设置默认选中第一项
                             }
                         }}
@@ -171,7 +207,7 @@ const NodeTree = React.createClass({
                     </select>
                     <select ref={ref=>sceneNode.__gui__.selectScript = ref} hidden onChange={e=>{
                             sceneNode.__gui__.selectScript.hidden = true;
-                            this.onNodeAdd('Script',sceneNode,e.nativeEvent.target.value);
+                            this.onNodeAdd('Script',sceneNode,sceneNode.__gui__.isChildAdd,e.nativeEvent.target.value);
                             sceneNode.__gui__.selectScript.selectedIndex = 0;
 
                             sceneNode.__gui__.selectHidden = true;
@@ -222,16 +258,154 @@ const NodeTree = React.createClass({
         });
         return ret;
     },
-    getEditablePropNode(mode,valueShow,propertyZone,propertyName){
-        const customLabel = (
-            <span className="cus-label">
-                <span>{propertyZone}:{propertyZone[propertyName]}</span>
-                <span style={{color: 'blue'}}>edit</span>&nbsp;
-                <span style={{color: 'red'}}>del</span>
-            </span>
-        );
-        return customLabel;
+    //getEditablePropNode(mode,valueShow,propertyZone,propertyName){
+    //    const customLabel = (
+    //        <span className="cus-label">
+    //            <span>{propertyZone}:{propertyZone[propertyName]}</span>
+    //            <span style={{color: 'blue'}}>edit</span>&nbsp;
+    //            <span style={{color: 'red'}}>del</span>
+    //        </span>
+    //    );
+    //    return customLabel;
+    //},
+    getEditableTitleByValueType(isFromNode,pname,defaultValue,valueType,onChangeFunc){
+        if(isFromNode){
+            switch(pname){
+                case 'width':
+                case 'height':
+                case 'x':
+                case 'y':
+                case 'rotation':
+                    return (<input type="number" defaultValue={defaultValue} step="1" onChange={onChangeFunc}></input>);
+                    break;
+                case 'scaleX':
+                case 'scaleY':
+                    return (<input type="number" defaultValue={defaultValue} step="0.1" onChange={onChangeFunc}></input>);
+                    break;
+                case 'anchorX':
+                case 'anchorY':
+                    return (<input type="number" max="1" min="-1" defaultValue={defaultValue} step="0.1" onChange={onChangeFunc}></input>);
+                    break;
+                case 'alpha':
+                    return (<input type="number" max="1" min="0" defaultValue={defaultValue} step="0.1" onChange={onChangeFunc}></input>);
+                    break;
+                default:
+                    return (<input style={{width:40}} type="text" defaultValue={defaultValue} onChange={onChangeFunc}></input>)
+            }
+        }else{
+            if(valueType.isBasic){
+                //基本类型
+                switch(valueType.valueType){
+                    case 'string':
+                        return (<input type="text" defaultValue={defaultValue} onChange={onChangeFunc}></input>);
+                        break;
+                    case 'number':
+                        return (<input type="number" defaultValue={defaultValue} onChange={onChangeFunc}></input>);
+                        break;
+                    case 'boolean':
+                        if(defaultValue){
+                            return (<input type="checkbox" checked onChange={onChangeFunc}></input>);
+                        }else{
+                            return (<input type="checkbox" onChange={onChangeFunc}></input>);
+                        }
+                        break;
+                }
+            }else{
+                //引用类型
+                return (<span>{defaultValue === null?'null':(defaultValue.name?defaultValue.name:defaultValue)}</span>)
+            }
+        }
     },
+    getEditableComponentTreeNode(propName,component){
+        let declaration = SCRIPTS[component.name];
+        let valueType = UTIL.getValueTypeByPropDeclaration(propName,declaration);
+        if(valueType) {
+            //单一组件属性节点
+            if (!valueType.isArray) {
+                const editLabel = (
+                    <span className="cus-label">
+                        <span>{propName}:</span>&nbsp;
+                        {this.getEditableTitleByValueType(
+                        //isFromNode
+                            false,
+                        //pname
+                            propName,
+                        //defaultValue
+                            component.properties[propName],
+                        //valueType
+                            valueType,
+                        //onChangeFunc
+                            e=>this.onComponentPropsEdit(propName, null, valueType.valueType === 'boolean' ? e.nativeEvent.target.checked : e.nativeEvent.target.value, component))}
+                    </span>
+                );
+                //通过key区分是否可以拖拽
+                let eventKey = valueType.isBasic?component.id+"_"+propName:"draggable:"+component.id+"_"+propName;
+                return (<TreeNode title={editLabel} key={eventKey}/>);
+            } else {
+                //复合组件属性节点
+                const addChildLabel = (
+                    <span className="cus-label">
+                        <span>{propName}:[{valueType.valueType === null ? 'any' : valueType.valueType}]</span>&nbsp;
+                        <span style={{color: 'green'}} onClick={e=>{
+                            e.stopPropagation();
+                            this.onComponentArrayPropsAdd(propName,valueType,declaration,component);
+                            }
+                        }>(+add)</span>
+                        <span> ({component.properties[propName].length})</span>
+                    </span>
+                );
+                let childs = [];
+                component.properties[propName].forEach((value, i)=> {
+                    const editLabel = (
+                        <span>
+                            <span>{i}:</span>
+                            {this.getEditableTitleByValueType(
+                            //isFromNode
+                                false,
+                            //pname
+                                propName,
+                            //defaultValue
+                                value,
+                            //valueType
+                                valueType,
+                            //onChangeFunc
+                                e=>this.onComponentPropsEdit(propName, i, valueType.valueType === 'boolean' ? e.nativeEvent.target.checked : e.nativeEvent.target.value, component)
+                            )}
+                            <span style={{color: 'red'}} onClick={e=>{
+                                e.stopPropagation();
+                                this.onComponentArrayPropsDel(propName,i,component)
+                            }}>(-del)</span>
+                        </span>
+                    );
+                    //通过key区分是否可以拖拽
+                    let eventKey = valueType.isBasic?component.id+"_"+propName+"_"+i:"draggable:"+component.id+"_"+propName+"_"+i;
+                    childs.push(
+                        <TreeNode title={editLabel} key={eventKey}/>
+                    );
+                });
+                return (<TreeNode title={addChildLabel} key={component.id+"_"+propName}>{childs}</TreeNode>);
+            }
+        }
+    },
+    addInComponentArrayTypeValue(component,script){
+        let declarations = SCRIPTS[script];
+        for(let pname in declarations){
+            let valueType = UTIL.getValueTypeByPropDeclaration(pname,declarations);
+            //数组类型初始化为空数组[]
+            if(valueType.isArray){
+                component[pname] = [];
+            }else
+            //基本类型直接赋值
+            if(valueType.isBasic){
+                component[pname] = declarations[pname];
+            }else
+            //引用类型赋default字段的值为初值
+            if(!valueType.isBasic){
+                component[pname] = declarations[pname].default;
+            }
+        }
+    },
+
     //显示节点的编辑属性
     //功能:
     // 1.编辑属性
@@ -245,7 +419,7 @@ const NodeTree = React.createClass({
                 const customLabel = (
                     <span className="cus-label">
                         <span>{p}:</span>&nbsp;
-                        <input style={{width:40}} type="text" defaultValue={sceneNode.properties[p]} onChange={e=>this.onPropsEdit(p,e.nativeEvent.target.value,sceneNode)}></input>
+                        {this.getEditableTitleByValueType(true,p,sceneNode.properties[p],null,e=>this.onNodePropsEdit(p,e.nativeEvent.target.value,sceneNode))}
                     </span>
                 );
                 //basic.push(<TreeNode title={this.getEditablePropNode(null,null,sceneNode.properties,p)} title1={p+":"+sceneNode.properties[p]} key={sceneNode.id+"_"+p}/>);
@@ -257,9 +431,11 @@ const NodeTree = React.createClass({
             //添加组件
             const components = [];
             sceneNode.components.forEach(component=>{
+                this.state.ids[component.id] = component;
                 //添加组件属性
                 var comp_props = [];
                 for(let p in component.properties){
+                    //动画组件属性
                     if(p === 'clips' && component.properties[p] instanceof Array ){
                         let clipNodes = [];
                         //添加动画剪辑
@@ -309,9 +485,10 @@ const NodeTree = React.createClass({
                             </TreeNode>
                         );
                     }else{
-                        comp_props.push(
-                            <TreeNode title={p+":"+component.properties[p]} key={component.id+"_"+p}/>
-                        );
+                        const editableTreeNode = this.getEditableComponentTreeNode(p,component);
+                        if(editableTreeNode){
+                            comp_props.push(editableTreeNode);
+                        }
                     }
                 }
                 const delComponentPanel = (
@@ -404,54 +581,143 @@ const NodeTree = React.createClass({
             component.node = sceneNode.id;
             if(script){
                 component.name = script;
-                //在此处给暴露的属性赋初始值
-                component.properties = SCRIPTS[script];
+                //在此处给暴露的属性赋初始值(用于编辑器)
+                this.addComponentDefaultProperties(component,script);
             }
             sceneNode.components.push(component);
             console.log('onComponentAdd',val,sceneNode);
         }
         this.refresh();
     },
+    //给一个空白Component添加properties字段
+    addComponentDefaultProperties(component,script){
+        let declarations = SCRIPTS[script];
+        console.log("addComponentDefaultProperties",declarations);
+        for(let pname in declarations){
+            let valueType = UTIL.getValueTypeByPropDeclaration(pname,declarations);
+            console.log("addComponentDefaultProperties",pname,valueType);
+            if(valueType){
+                //数组类型初始化为空数组[]
+                if(valueType.isArray){
+                    component.properties[pname] = [];
+                }else
+                //基本类型直接赋值
+                if(valueType.isBasic){
+                    component.properties[pname] = declarations[pname];
+                }else
+                //引用类型赋default字段的值为初值
+                if(!valueType.isBasic){
+                    component.properties[pname] = declarations[pname].default;
+                }
+            }
+        }
+    },
+
+    onComponentPropsEdit(pname,subname,value,component){
+        console.log("onComponentPropsEdit",pname,subname,value,component);
+        if(subname){
+            component.properties[pname][subname] = value;
+        }else{
+            component.properties[pname] = value;
+        }
+        this.refresh();
+    },
+
+    onComponentArrayPropsAdd(pname,valueType,declaration,component){
+        console.log("onComponentArrayPropsAdd",pname,valueType,declaration,component);
+        if(valueType.isBasic){
+            //基本类型
+            component.properties[pname].push(declaration[pname]);
+        }else{
+            //引用类型
+            component.properties[pname].push(declaration[pname].default);
+        }
+        this.refresh();
+    },
+
+    onComponentArrayPropsDel(pname,index,component){
+        console.log("onComponentArrayPropsDel",pname,index,component);
+        component.properties[pname].splice(index,1);
+        this.refresh();
+    },
+
     onNodeEdit(node){
         console.log('onNodeEdit',node);
         node.__gui__.mode = 'edit';
         this.refresh();
     },
-    onNodeAdd(nodeType,node,script){
-        console.log('onNodeAdd',nodeType,node,script);
+
+    onNodeAdd(nodeType,node,isAddChild,script){
+        console.log('onNodeAdd',nodeType,node,isAddChild,script);
         if(nodeType !== ''){
+            //不实际生成节点
+            if(nodeType === 'Script' && !script){
+                node.__gui__.selectScript.hidden = false;
+                node.__gui__.selectScript.focus();
+                return;
+            }
+            //实际生成节点
             let template = require('./BlankNode.scene');
             let newNode = JSON.parse(JSON.stringify(template));
             newNode.id = IDGen.allocateId();
-            newNode.parent = node.parent;
-            if(newNode.parent === null){
-                let index = this.state.scene.indexOf(node);
-                this.state.scene.splice(index+1,0,newNode);
+            let arrayId = 0;
+            if(isAddChild){
+                //创建孩子节点
+                newNode.parent = node.id;
+                arrayId = node.id;
+                node.children.push(newNode);
             }else{
-                let index = this.state.ids[newNode.parent].children.indexOf(node);
-                this.state.ids[newNode.parent].children.splice(index+1,0,newNode);
-            }
-            if(nodeType !== 'Blank'){
-                if(nodeType === 'Script' && !script){
-                    node.__gui__.selectScript.hidden = false;
-                    node.__gui__.selectScript.focus();
+                //创建兄弟节点
+                newNode.parent = node.parent;
+                if(newNode.parent === null){
+                    //顶级
+                    arrayId = -1;
+                    let index = this.state.scene.indexOf(node);
+                    this.state.scene.splice(index+1,0,newNode);
                 }else{
-                    this.onComponentAdd(nodeType,newNode,script);
+                    arrayId = node.parent;
+                    let index = this.state.ids[newNode.parent].children.indexOf(node);
+                    this.state.ids[newNode.parent].children.splice(index+1,0,newNode);
                 }
-            }else{
+            }
+            //预览
+            if(electron && ROUTE){
+                electron.ipcRenderer.send(ROUTE.PREVIEW_NODE_ADD_REMOVE,'add',arrayId,newNode);
+            }
+
+            if(nodeType === 'Blank'){
                 this.refresh();
+            }else{
+                this.onComponentAdd(nodeType,newNode,script);
             }
         }
         //this.refresh();
     },
+    
     onNodeDel(node){
         console.log('onNodeDel',node);
     },
-    onPropsEdit(propsName,val,sceneNode){
-        console.log('onPropsEdit',propsName,val,sceneNode);
+
+    onNodePropsEdit(propsName,val,sceneNode){
+        console.log('onNodePropsEdit',propsName,val,sceneNode);
         if(electron && ROUTE){
             electron.ipcRenderer.send(ROUTE.PREVIEW_EDIT_SHOW,propsName,val,sceneNode);
         }
+        UTIL.setValueByPropDeclaration(propsName,null,{
+            x:0,
+            y:0,
+            width:0,
+            height:0,
+            scaleX:0,
+            scaleY:0,
+            anchorX:0,
+            anchorY:0,
+            alpha:0,
+            color:0,
+            rotation:0
+        },sceneNode.properties,val);
+        //this.setPropertyValue(sceneNode.properties,propsName,val,true);
+        //sceneNode.properties[propsName] = parseFloat(val);
     },
     onRightClick(event){
         console.log('onRightClick',event);
@@ -470,7 +736,22 @@ const NodeTree = React.createClass({
     },
     onDrop(event){
         console.log('onDrop',event);
-
+        let key = event.node.props.eventKey;
+        let keyIndex = key.indexOf("draggable:");
+        if(keyIndex !== -1){
+            let fromKey = event.dragNode.props.eventKey;
+            if(this.state.ids[fromKey]){
+                //找到了主体 查看是否可以赋值
+                let route = key.substring("draggable:".length).split("_");
+                console.log("onDrop",route,this.state.ids);
+                let component = this.state.ids[route[0]];
+                let pname = route[1];
+                let subname = route.length>2?route[2]:null;
+                //UTIL.setValueByPropDeclaration()
+                //可以赋值
+                this.onComponentPropsEdit(pname,subname,fromKey,component);
+            }
+        }
     },
     onSelect(key){
         console.log('onSelect',key);

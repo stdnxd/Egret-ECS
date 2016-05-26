@@ -105,8 +105,8 @@ var ecs;
             child.parent = this;
             this.children.push(child);
             //可视化
-            if (child.visualable) {
-                this.visualable = true;
+            if (ecs.MODE === ecs.MODE_PREVIEW || child.visualable) {
+                this.visualable = child.visualable;
                 console.log("node.addChild", this._raw);
                 /**
                  * step3.属性注入
@@ -410,8 +410,6 @@ var ecs;
     function parseGenNode(nodeWrapper, references, sceneName) {
         var instance = new Node(nodeWrapper);
         references[nodeWrapper.id] = instance;
-        //必要的一步(PREVIEW)
-        instance.visualable = false;
         if (nodeWrapper.parent) {
             instance.parent = references[nodeWrapper.parent];
         }
@@ -420,6 +418,8 @@ var ecs;
         if (instance.parent) {
             instance.parent.children.push(instance);
         }
+        //必要的一步(PREVIEW)
+        instance.visualable = false;
     }
     //从json配置生成逻辑组件
     function parseGenComponent(componentWrapper, references, sceneName) {
@@ -906,6 +906,9 @@ var ecs;
                         this._relative.width = width;
                     }
                     this._raw.width = width;
+                    if (this._anchorX) {
+                        this.anchorX = this._anchorX;
+                    }
                     previewNode(this);
                 }
             },
@@ -923,6 +926,9 @@ var ecs;
                         this._relative.height = height;
                     }
                     this._raw.height = height;
+                    if (this._anchorY) {
+                        this.anchorY = this._anchorY;
+                    }
                     previewNode(this);
                 }
             },

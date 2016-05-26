@@ -6,8 +6,8 @@ ecs.Class(12349,"card_slot",{
     properties:{
         isShow:false,
         slots:{
-            "default":[],
-            type:[ecs.Node]
+            "default":null,
+            type:["ecs.Node"]
         }
     },
     start:function(){

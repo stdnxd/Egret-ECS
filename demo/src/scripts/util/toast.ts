@@ -7,7 +7,7 @@ ecs.Class(12345,"toast",
         properties:{
             tipsLabel:{
                 "default":null,
-                type:"egret.TextField"
+                type:"Label"
             }
         },
         onLoad: function () {

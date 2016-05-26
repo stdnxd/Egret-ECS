@@ -14,7 +14,7 @@ ecs.Class(12355,"scene_loader",{
         //显示进度的label
         label:{
             "default":null,
-            type:'egret.TextField'
+            type:'Label'
         }
     },
 

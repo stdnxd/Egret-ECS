@@ -11,9 +11,12 @@ const SCENE_OPEN = "scene-open";
 const PREVIEW_EDIT_SHOW = "preview-edit-show";
 //编辑界面节点选中或取消
 const PREVIEW_NODE_SELECT = "preview-node-select";
+//编辑界面节点增删
+const PREVIEW_NODE_ADD_REMOVE = "preview-node-add-remove";
 
 exports.WORKSPACE_EDIT = WORKSPACE_EDIT;
 exports.WORKSPACE_INIT = WORKSPACE_INIT;
 exports.SCENE_OPEN = SCENE_OPEN;
 exports.PREVIEW_EDIT_SHOW = PREVIEW_EDIT_SHOW;
 exports.PREVIEW_NODE_SELECT = PREVIEW_NODE_SELECT;
+exports.PREVIEW_NODE_ADD_REMOVE = PREVIEW_NODE_ADD_REMOVE;
