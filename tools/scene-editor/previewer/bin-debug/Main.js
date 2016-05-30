@@ -14,7 +14,7 @@ var Main = (function (_super) {
         this.constants = this.electron.remote.getGlobal("ecs");
         var ROUTE = this.electron.remote.getGlobal("ROUTE");
         //节点属性编辑
-        this.electron.ipcRenderer.on(ROUTE.PREVIEW_EDIT_SHOW, function (event, propName, val, node) {
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_NODE_EDIT_SHOW, function (event, propName, val, node) {
             console.log(ROUTE.PREVIEW_EDIT_SHOW, propName, val, node);
             if (val.indexOf('.') != -1) {
                 _this.domain.reference[node.id][propName] = parseFloat(val);
@@ -63,6 +63,63 @@ var Main = (function (_super) {
                 var rNode = _this.domain.reference[nodeWrapper.id];
             }
         });
+        //组件增删
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_COMPONENT_ADD_REMOVE, function (event, type, componentWrapper) {
+            if (type === "add") {
+                var addNode = _this.domain.reference[componentWrapper.node];
+                //step1.创建组件
+                var newComponent = new ecs.Component(componentWrapper);
+                //step2.添加组件
+                addNode.addComponent(newComponent);
+                //step3.注册id
+                _this.domain.reference[newComponent._wrap_obj.id] = newComponent;
+                ecs.assembleSingleComponent(newComponent, addNode, _this.domain.reference);
+            }
+            else if (type === "remove") {
+            }
+        });
+        //组件属性编辑
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_COMPONENT_EDIT_SHOW, function (event, type, pname, valueType, component, arg1, arg2) {
+            var targetComponent = _this.domain.reference[component.id];
+            switch (type) {
+                case 'edit':
+                    var value = arg1;
+                    var subname = arg2;
+                    if (valueType.isBasic) {
+                        if (arg2) {
+                            targetComponent[pname][subname] = value;
+                        }
+                        else {
+                            targetComponent[pname] = value;
+                        }
+                    }
+                    else {
+                        //非基本类型为引用 在引用池中找
+                        if (arg2) {
+                            targetComponent[pname][arg2] = _this.domain.reference[value];
+                        }
+                        else {
+                            targetComponent[pname] = _this.domain.reference[value];
+                        }
+                    }
+                    break;
+                case 'addsub':
+                    var declaration = arg1;
+                    if (valueType.isBasic) {
+                        //基本类型
+                        targetComponent[pname].push(declaration[pname]);
+                    }
+                    else {
+                        //引用类型
+                        targetComponent[pname].push(declaration[pname].default);
+                    }
+                    break;
+                case 'delsub':
+                    var index = arg1;
+                    targetComponent[pname].splice(index, 1);
+                    break;
+            }
+        });
     }
     var d = __define,c=Main,p=c.prototype;
     p.onAddToStage = function () {
@@ -99,6 +156,7 @@ var Main = (function (_super) {
     };
     p.preview = function (scene) {
         var _this = this;
+        console.log("preview scene", scene);
         ecs.MODE = ecs.MODE_PREVIEW;
         this.domain = ecs.parseScene(scene, null);
         //仅装入静态实例

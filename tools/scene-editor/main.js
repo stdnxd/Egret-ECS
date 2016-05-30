@@ -7,6 +7,7 @@ global['ROUTE'] = require('./route');
 global['SCRIPTOR'] = require('./scriptcollector');
 
 global['FileUtil'] = require('./utils/FileUtil');
+global['Workspace'] = require('./utils/Workspace');
 // Module to control application life.
 const app = electron.app;
 // Module to create native browser window.
@@ -22,8 +23,16 @@ ipcMain.on('init-send',function (event,arg) {
 	event.sender.send('console.log',arg+' named Jack!');
 });
 
-ipcMain.on(ROUTE.PREVIEW_EDIT_SHOW,function(event,arg1,arg2,arg3){
-	event.sender.send(ROUTE.PREVIEW_EDIT_SHOW,arg1,arg2,arg3);
+ipcMain.on(ROUTE.PREVIEW_COMPONENT_EDIT_SHOW,function(event,type,pname,valueType,component,arg1,arg2){
+	event.sender.send(ROUTE.PREVIEW_COMPONENT_EDIT_SHOW,type,pname,valueType,component,arg1,arg2);
+});
+
+ipcMain.on(ROUTE.PREVIEW_COMPONENT_ADD_REMOVE,function(event,type,componentWrapper){
+	event.sender.send(ROUTE.PREVIEW_COMPONENT_ADD_REMOVE,type,componentWrapper);
+});
+
+ipcMain.on(ROUTE.PREVIEW_NODE_EDIT_SHOW,function(event,arg1,arg2,arg3){
+	event.sender.send(ROUTE.PREVIEW_NODE_EDIT_SHOW,arg1,arg2,arg3);
 });
 
 ipcMain.on(ROUTE.PREVIEW_NODE_SELECT,function(event,node,isSelected){
@@ -43,10 +52,16 @@ ipcMain.on(ROUTE.SCENE_OPEN,function(event,scenePath){
 	//event.sender.send('console.log',fs.readFileSync(arg,'utf-8'));
 });
 
-ipcMain.on(ROUTE.WORKSPACE_EDIT,function(event,configObj){
+ipcMain.on(ROUTE.WORKSPACE_EDIT,function(event,project){
 	jumpTo('file://'+ __dirname + '/panels/ws_edit.html',function(){
-		event.sender.send(ROUTE.WORKSPACE_EDIT,configObj);
+		event.sender.send(ROUTE.WORKSPACE_EDIT,project);
 	})
+});
+
+ipcMain.on(ROUTE.WORKSPACE_INIT,function(event){
+	jumpTo('file://' + __dirname + '/panels/ws_select.html',function(){
+		event.sender.send(ROUTE.WORKSPACE_INIT,Workspace.readConfig());
+	});
 });
 
 function jumpTo(jumpUrl,didFinishLoadCb){
@@ -96,9 +111,9 @@ app.on('ready',function () {
 	globalShortcut.register('ctrl+s', function () {
 		mainWindow.webContents.send('global-shortcut', 'save');
 	});
-	let workspace_config = JSON.parse(FileUtil.read(FileUtil.joinPath(__dirname,"workspace.json")));
+	//let workspace_config = JSON.parse(FileUtil.read(FileUtil.joinPath(__dirname,"workspace.json")));
 	jumpTo('file://' + __dirname + '/panels/ws_select.html',function(){
-		mainWindow.webContents.send(ROUTE.WORKSPACE_INIT,workspace_config);
+		mainWindow.webContents.send(ROUTE.WORKSPACE_INIT,Workspace.readConfig());
 	});
 })
 
@@ -116,9 +131,9 @@ app.on('activate', function () {
   // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
     //createWindow();
-	  let workspace_config = JSON.parse(FileUtil.read(FileUtil.joinPath(__dirname,"workspace.json")));
+	 // let workspace_config = JSON.parse(FileUtil.read(FileUtil.joinPath(__dirname,"workspace.json")));
 	  jumpTo('file://' + __dirname + '/panels/ws_select.html',function(){
-		  mainWindow.webContents.send(ROUTE.WORKSPACE_INIT,workspace_config);
+		  mainWindow.webContents.send(ROUTE.WORKSPACE_INIT,Workspace.readConfig());
 	  });
   }
 });

@@ -84,6 +84,7 @@ declare module ecs {
     function scrollTo(sceneIndex: number, callBack?: Function): void;
     function parseScene(scene: any[], topContainer?: egret.DisplayObjectContainer, sceneName?: string): SceneDomain;
     function saveScene(): boolean;
+    function assembleSingleComponent(component: Component, currentNode: Node, references: any): void;
     function selectNode(target: Node): void;
     function cancelSelectNode(target: Node): void;
     function Class(id: number, name: string, raw: any): void;

@@ -335,7 +335,7 @@ const NodeTree = React.createClass({
                         //valueType
                             valueType,
                         //onChangeFunc
-                            e=>this.onComponentPropsEdit(propName, null, valueType.valueType === 'boolean' ? e.nativeEvent.target.checked : e.nativeEvent.target.value, component))}
+                            e=>this.onComponentPropsEdit(propName, null,valueType, valueType.valueType === 'boolean' ? e.nativeEvent.target.checked : e.nativeEvent.target.value, component))}
                     </span>
                 );
                 //通过key区分是否可以拖拽
@@ -369,11 +369,11 @@ const NodeTree = React.createClass({
                             //valueType
                                 valueType,
                             //onChangeFunc
-                                e=>this.onComponentPropsEdit(propName, i, valueType.valueType === 'boolean' ? e.nativeEvent.target.checked : e.nativeEvent.target.value, component)
+                                e=>this.onComponentPropsEdit(propName, i, valueType, valueType.valueType === 'boolean' ? e.nativeEvent.target.checked : e.nativeEvent.target.value, component)
                             )}
                             <span style={{color: 'red'}} onClick={e=>{
                                 e.stopPropagation();
-                                this.onComponentArrayPropsDel(propName,i,component)
+                                this.onComponentArrayPropsDel(propName,i,valueType,component)
                             }}>(-del)</span>
                         </span>
                     );
@@ -586,6 +586,9 @@ const NodeTree = React.createClass({
             }
             sceneNode.components.push(component);
             console.log('onComponentAdd',val,sceneNode);
+            if(electron && ROUTE){
+                electron.ipcRenderer.send(ROUTE.PREVIEW_COMPONENT_ADD_REMOVE,'add',component);
+            }
         }
         this.refresh();
     },
@@ -613,7 +616,7 @@ const NodeTree = React.createClass({
         }
     },
 
-    onComponentPropsEdit(pname,subname,value,component){
+    onComponentPropsEdit(pname,subname,valueType,value,component){
         console.log("onComponentPropsEdit",pname,subname,value,component);
         if(subname){
             component.properties[pname][subname] = value;
@@ -621,6 +624,10 @@ const NodeTree = React.createClass({
             component.properties[pname] = value;
         }
         this.refresh();
+        if(electron && ROUTE){
+            electron.ipcRenderer.send(ROUTE.PREVIEW_COMPONENT_EDIT_SHOW,
+                "edit",pname,valueType,component,value,subname);
+        }
     },
 
     onComponentArrayPropsAdd(pname,valueType,declaration,component){
@@ -633,12 +640,20 @@ const NodeTree = React.createClass({
             component.properties[pname].push(declaration[pname].default);
         }
         this.refresh();
+        if(electron && ROUTE){
+            electron.ipcRenderer.send(ROUTE.PREVIEW_COMPONENT_EDIT_SHOW,
+                "addsub",pname,valueType,component,declaration);
+        }
     },
 
-    onComponentArrayPropsDel(pname,index,component){
-        console.log("onComponentArrayPropsDel",pname,index,component);
+    onComponentArrayPropsDel(pname,index,valueType,component){
+        console.log("onComponentArrayPropsDel",pname,index,valueType,component);
         component.properties[pname].splice(index,1);
         this.refresh();
+        if(electron && ROUTE){
+            electron.ipcRenderer.send(ROUTE.PREVIEW_COMPONENT_EDIT_SHOW,
+                "delsub",pname,valueType,component,index);
+        }
     },
 
     onNodeEdit(node){
@@ -701,23 +716,23 @@ const NodeTree = React.createClass({
     onNodePropsEdit(propsName,val,sceneNode){
         console.log('onNodePropsEdit',propsName,val,sceneNode);
         if(electron && ROUTE){
-            electron.ipcRenderer.send(ROUTE.PREVIEW_EDIT_SHOW,propsName,val,sceneNode);
+            electron.ipcRenderer.send(ROUTE.PREVIEW_NODE_EDIT_SHOW,propsName,val,sceneNode);
         }
-        UTIL.setValueByPropDeclaration(propsName,null,{
-            x:0,
-            y:0,
-            width:0,
-            height:0,
-            scaleX:0,
-            scaleY:0,
-            anchorX:0,
-            anchorY:0,
-            alpha:0,
-            color:0,
-            rotation:0
-        },sceneNode.properties,val);
+        //UTIL.setValueByPropDeclaration(propsName,null,{
+        //    x:0,
+        //    y:0,
+        //    width:0,
+        //    height:0,
+        //    scaleX:0,
+        //    scaleY:0,
+        //    anchorX:0,
+        //    anchorY:0,
+        //    alpha:0,
+        //    color:0,
+        //    rotation:0
+        //},sceneNode.properties,val);
         //this.setPropertyValue(sceneNode.properties,propsName,val,true);
-        //sceneNode.properties[propsName] = parseFloat(val);
+        sceneNode.properties[propsName] = parseFloat(val);
     },
     onRightClick(event){
         console.log('onRightClick',event);

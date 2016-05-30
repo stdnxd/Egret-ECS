@@ -20,7 +20,8 @@
   </head>
   <body>
     <h1>Egret ECS-Scene-Editor Workspace Config Panel!</h1>
-    <p><script>{document.write(process.env);console.log(process.env)}</script></p>
+    <span onclick="onBack()">返回上一页</span>
+    <p><script>{console.log(process.env)}</script></p>
       <ul>
         <li>请输入脚本目录:
             <textarea class="holder" rows="5" maxrows="5" id="script_input" placeholder="Drag script dir here!"></textarea>
@@ -54,12 +55,14 @@
 
       var scriptor = require('electron').remote['require']('./scriptcollector');
       const h5 = document.querySelector("h5");
-      ipcRenderer.on(ROUTE.WORKSPACE_EDIT,function(event,args){
-          if(args){
-              metaSetScriptPath(args.script_dir);
-              metaSetResconfigPath(args.res_config);
-              metaSetResDirPath(args.res_dir);
-              metaSetScenePath(args.open_path);
+      let cProject = null;
+      ipcRenderer.on(ROUTE.WORKSPACE_EDIT,function(event,project){
+          if(project){
+              cProject = project;
+              metaSetScriptPath(cProject.script_dir);
+              metaSetResconfigPath(cProject.res_config);
+              metaSetResDirPath(cProject.res_dir);
+              metaSetScenePath(cProject.open_path);
           }
       });
       ipcRenderer.on('console.log',function(event,args){
@@ -113,6 +116,7 @@
           }
           return false;
       };
+
       //绑定拖拽事件
       holders.forEach(function(holder){
           holder.ondragover = ON_DRAG_OVER;
@@ -122,43 +126,49 @@
 
       function metaSetScriptPath(path){
           script_holder.value = path;
-          console.log("scriptor:",scriptor.searchDir(path));
+          if(path!==""){
+              console.log("scriptor:",scriptor.searchDir(path));
+          }
       }
 
       function metaSetScenePath(path){
           scene_holder.value = path;
-          scriptor.readSceneFile(path);
+          if(path!==""){
+              scriptor.readSceneFile(path);
+          }
       }
 
       function metaSetResconfigPath(path){
           res_config_holder.value = path;
-          console.log("resConfigObj",scriptor.readResConfig(path));
-          let ecs = require('electron').remote.getGlobal("ecs");
-          ecs.res_config = path;
-          console.log("res_config:",ecs.res_config);
+          if(path!==""){
+              console.log("resConfigObj",scriptor.readResConfig(path));
+              let ecs = require('electron').remote.getGlobal("ecs");
+              ecs.res_config = path;
+              console.log("res_config:",ecs.res_config);
+          }
       }
 
       function metaSetResDirPath(path){
           res_dir_holder.value = path;
-          let ecs = require('electron').remote.getGlobal("ecs");
-          ecs.res_dir = path;
-          console.log("res_dir:",ecs.res_dir);
-          let selects = scriptor.listAvailableSceneFiles(ecs.res_dir);
-          if(selects.length>0){
-              let selectDiv = document.getElementById("selectfrom");
-              let select =
-                      '<select id="select" onchange="onSceneFileSelect(this.value)">' +
-                      '<option value="">选择要打开的场景文件</option>';
-              selects.forEach(function (filePath){
-                  let fileName = filePath.substr(path.length);
-                  select += '<option value="'+filePath+'">'+fileName+'</option>';
-              });
-              select +=
-                      '</select>';
-              selectDiv.innerHTML = select;
+          if(path!==""){
+              let ecs = require('electron').remote.getGlobal("ecs");
+              ecs.res_dir = path;
+              console.log("res_dir:",ecs.res_dir);
+              let selects = scriptor.listAvailableSceneFiles(ecs.res_dir);
+              if(selects.length>0){
+                  let selectDiv = document.getElementById("selectfrom");
+                  let select =
+                          '<select id="select" onchange="onSceneFileSelect(this.value)">' +
+                          '<option value="">选择要打开的场景文件</option>';
+                  selects.forEach(function (filePath){
+                      let fileName = filePath.substr(path.length);
+                      select += '<option value="'+filePath+'">'+fileName+'</option>';
+                  });
+                  select +=
+                          '</select>';
+                  selectDiv.innerHTML = select;
+              }
           }
-
-
       }
 
       function execute(){
@@ -171,6 +181,16 @@
           }
           metaSetScenePath(scene_holder.value);
           ipcRenderer.send(ROUTE.SCENE_OPEN,scene_holder.value);
+          saveCurrentProject();
+      }
+
+      function saveCurrentProject(){
+          cProject.open_path = scene_holder.value;
+          cProject.script_dir = script_holder.value;
+          cProject.res_config = res_config_holder.value;
+          cProject.res_dir = res_dir_holder.value;
+          let Workspace = require("electron").remote.getGlobal("Workspace");
+          Workspace.saveProject(cProject);
       }
 
       function onSceneFileSelect(sceneFilePath){
@@ -221,6 +241,11 @@
           FileUtil.save(scene_holder.value,JSON.stringify(initScene));
           execute();
       }
+
+        function onBack(){
+            ipcRenderer.send(ROUTE.WORKSPACE_INIT);
+        }
+
     </script>
   </body>
 </html>

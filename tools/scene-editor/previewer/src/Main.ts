@@ -12,7 +12,7 @@ class Main extends egret.DisplayObjectContainer {
         this.constants = this.electron.remote.getGlobal("ecs");
         const ROUTE = this.electron.remote.getGlobal("ROUTE");
         //节点属性编辑
-        this.electron.ipcRenderer.on(ROUTE.PREVIEW_EDIT_SHOW,(event,propName,val,node)=>{
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_NODE_EDIT_SHOW,(event,propName,val,node)=>{
             console.log(ROUTE.PREVIEW_EDIT_SHOW,propName,val,node);
             if(val.indexOf('.')!=-1){
                 this.domain.reference[node.id][propName] = parseFloat(val);
@@ -60,6 +60,60 @@ class Main extends egret.DisplayObjectContainer {
 
             }
         });
+        //组件增删
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_COMPONENT_ADD_REMOVE,(event,type,componentWrapper)=>{
+            if(type === "add"){
+                let addNode:ecs.Node = this.domain.reference[componentWrapper.node];
+                //step1.创建组件
+                let newComponent:ecs.Component = new ecs.Component(componentWrapper);
+                //step2.添加组件
+                addNode.addComponent(newComponent);
+                //step3.注册id
+                this.domain.reference[newComponent._wrap_obj.id] = newComponent;
+                ecs.assembleSingleComponent(newComponent,addNode,this.domain.reference);
+            }else
+            if(type === "remove"){
+
+            }
+        });
+        //组件属性编辑
+        this.electron.ipcRenderer.on(ROUTE.PREVIEW_COMPONENT_EDIT_SHOW,(event,type,pname,valueType,component,arg1,arg2)=>{
+            let targetComponent:ecs.Component = this.domain.reference[component.id];
+            switch(type){
+                case 'edit':
+                    let value = arg1;
+                    let subname = arg2;
+                    if(valueType.isBasic){
+                        if(arg2){
+                            targetComponent[pname][subname] = value;
+                        }else{
+                            targetComponent[pname] = value;
+                        }
+                    }else{
+                    //非基本类型为引用 在引用池中找
+                        if(arg2){
+                            targetComponent[pname][arg2] = this.domain.reference[value];
+                        }else{
+                            targetComponent[pname] = this.domain.reference[value];
+                        }
+                    }
+                    break;
+                case 'addsub':
+                    let declaration = arg1;
+                    if(valueType.isBasic){
+                        //基本类型
+                        targetComponent[pname].push(declaration[pname]);
+                    }else{
+                        //引用类型
+                        targetComponent[pname].push(declaration[pname].default);
+                    }
+                    break;
+                case 'delsub':
+                    let index = arg1;
+                    targetComponent[pname].splice(index,1);
+                    break;
+            }
+        });
     }
 
     onAddToStage(){
@@ -100,6 +154,7 @@ class Main extends egret.DisplayObjectContainer {
     }
 
     preview(scene){
+        console.log("preview scene",scene);
         ecs.MODE = ecs.MODE_PREVIEW;
         this.domain = ecs.parseScene(scene,null);
         //仅装入静态实例

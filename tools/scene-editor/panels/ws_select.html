@@ -8,10 +8,6 @@
     <h1>Egret ECS-Scene-Editor Workspace Select Panel!</h1>
     <p><script>{document.write(process.env);console.log(process.env)}</script></p>
     <ul id="ws_ul">
-        <li>新建工作空间名称:
-            <input type="text" id="ws_name"/>
-            <button onclick="onEdit()">编辑</button>
-        </li>
     </ul>
     <h5></h5>
     <script type="text/javascript">
@@ -25,16 +21,24 @@
         });
 
         function getWorkspaceFromConfig(configObj){
-            let addHTML = null;
-            configObj.projects.forEach(function(project,index){
-                addHTML +=
-                    '<li>' + project.name +
-                        '<button onClick="onOpen('+index+')">打开</button>' +
-                        '<button onClick="onEdit('+index+')">编辑</button>' +
-                    "</li>";
-            });
+            let addHTML = "";
+            let lastHTML =
+                '<li>新建工作空间名称:' +
+                    '<input type="text" id="ws_name"/>' +
+                    '<button onclick="onEdit()">编辑</button>' +
+                '</li>';
+            if(configObj && configObj.projects){
+                configObj.projects.forEach(function(project,index){
+                    addHTML +=
+                        '<li>' + project.name +
+                            '<button onClick="onOpen('+index+')">打开</button>' +
+                            '<button onClick="onEdit('+index+')">编辑</button>' +
+                            '<button onClick="onDel('+index+')">删除</button>' +
+                        "</li>";
+                });
+            }
             let ws_ul = document.getElementById("ws_ul");
-            ws_ul.innerHTML = addHTML + ws_ul.innerHTML;
+            ws_ul.innerHTML = addHTML + lastHTML;
         }
 
         function onOpen(index){
@@ -58,7 +62,7 @@
                     onEdit(index);
                 }
             }
-            scriptor.searchDir(path)
+//            scriptor.searchDir(path)
         }
 
         function onEdit(index){
@@ -68,10 +72,32 @@
                     let project = config.projects[index];
                     ipcRenderer.send(ROUTE.WORKSPACE_EDIT,project);
                 }else{
-                    ipcRenderer.send(ROUTE.WORKSPACE_EDIT);
+                    //新建
+                    let Workspace = require('electron').remote.getGlobal("Workspace");
+                    let ws_name = document.getElementById("ws_name");
+                    if(ws_name.value && Workspace.getProjectIndexByName(ws_name.value) == -1){
+                        let newProject = {
+                            "name": ws_name.value,
+                            "open_path": "",
+                            "res_config": "",
+                            "res_dir": "",
+                            "script_dir": ""
+                        };
+                        Workspace.saveProject(newProject);
+                        ipcRenderer.send(ROUTE.WORKSPACE_EDIT,newProject);
+                    }
                 }
             }
         }
+
+        function onDel(index) {
+            console.log("onDel",index);
+            config.projects.splice(index, 1);
+            let Workspace = require('electron').remote.getGlobal("Workspace");
+            Workspace.saveConfig(config);
+            getWorkspaceFromConfig(config);
+        }
+
     </script>
 </body>
 </html>

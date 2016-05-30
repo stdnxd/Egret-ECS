@@ -35,9 +35,23 @@ var ecs;
                 return this._visualable;
             }
             ,function (val) {
-                if (ecs.MODE === ecs.MODE_PREVIEW || val !== this._visualable) {
+                if (ecs.MODE === ecs.MODE_PREVIEW) {
                     this._visualable = val;
-                    if (ecs.MODE === ecs.MODE_PREVIEW || val) {
+                    //预览模式都是可视的只做一次
+                    if (!this._raw) {
+                        assembleContainer(this);
+                        if (this.parent) {
+                            this.parent.visualable = true;
+                        }
+                        injectNodeProperties(this._wrap_obj.properties, this);
+                        if (this.parent && this.parent._raw) {
+                            this.parent._raw.addChild(this._raw);
+                        }
+                    }
+                }
+                else if (val !== this._visualable) {
+                    this._visualable = val;
+                    if (val) {
                         //组件可视化
                         if (!this._raw) {
                             assembleContainer(this);
@@ -444,48 +458,54 @@ var ecs;
     function assembleNodeComponents(currentNode, references) {
         //遍历组件列表
         currentNode.components.forEach(function (component) {
-            if (component._wrap_obj.name in ui_components) {
-                switch (component._wrap_obj.name) {
-                    case "Label":
-                        component.single = true;
-                        assembleLabel(component);
-                        //可视化组件 将触发整个自下而上的可视化过程
-                        component.node.visualable = true;
-                        /**
-                         * 属性注入
-                         */
-                        injectProperties(component._wrap_obj.properties, component);
-                        console.log("set text color:", component.node.color);
-                        injectProperties({ color: component.node.color }, component.node);
-                        //将可视化组件添加到实体化后的可视化节点容器上
-                        currentNode._raw.addChild(component._raw);
-                        break;
-                    case "Sprite":
-                        component.single = true;
-                        assembleSprite(component);
-                        //可视化组件 将触发整个自下而上的可视化过程
-                        component.node.visualable = true;
-                        //将可视化组件添加到实体化后的可视化节点容器上
-                        currentNode._raw.addChild(component._raw);
-                        break;
-                    case "Animation":
-                        assembleAnimation(component);
-                        //可视化组件 将触发整个自下而上的可视化过程
-                        component.node.visualable = true;
-                        break;
-                }
-            }
-            else 
-            //非可视化组件 不触发自顶而下的可视化过程
-            if (component.name === "Canvas") {
-                assembleCanvas(component);
-            }
-            else {
-                assembleScript(component, references);
-            }
+            assembleSingleComponent(component, currentNode, references);
         });
         currentNode.children.forEach(function (childNode) { return assembleNodeComponents(childNode, references); });
     }
+    function assembleSingleComponent(component, currentNode, references) {
+        if (component._wrap_obj.name in ui_components) {
+            switch (component._wrap_obj.name) {
+                case "Label":
+                    component.single = true;
+                    assembleLabel(component);
+                    //可视化组件 将触发整个自下而上的可视化过程
+                    component.node.visualable = true;
+                    /**
+                     * 属性注入
+                     */
+                    injectPropertiesByOrder(component._wrap_obj.properties, component, [
+                        "stroke", "strokeColor", "enableWrapText", "textAlign", "text", "size"
+                    ]);
+                    console.log("set text color:", component.node.color);
+                    injectProperties({ color: component.node.color }, component.node);
+                    //将可视化组件添加到实体化后的可视化节点容器上
+                    currentNode._raw.addChild(component._raw);
+                    break;
+                case "Sprite":
+                    component.single = true;
+                    assembleSprite(component);
+                    //可视化组件 将触发整个自下而上的可视化过程
+                    component.node.visualable = true;
+                    //将可视化组件添加到实体化后的可视化节点容器上
+                    currentNode._raw.addChild(component._raw);
+                    break;
+                case "Animation":
+                    assembleAnimation(component);
+                    //可视化组件 将触发整个自下而上的可视化过程
+                    component.node.visualable = true;
+                    break;
+            }
+        }
+        else 
+        //非可视化组件 不触发自顶而下的可视化过程
+        if (component.name === "Canvas") {
+            assembleCanvas(component);
+        }
+        else {
+            assembleScript(component, references);
+        }
+    }
+    ecs.assembleSingleComponent = assembleSingleComponent;
     /**
      * 节点可视化
      * @param node
@@ -798,6 +818,14 @@ var ecs;
         });
     }
     ecs.cancelSelectNode = cancelSelectNode;
+    function injectPropertiesByOrder(propsWrapper, target, orderList) {
+        orderList.forEach(function (props) {
+            if (props in propsWrapper) {
+                target[props] = propsWrapper[props];
+            }
+        });
+        injectProperties(propsWrapper, target);
+    }
     /**
      * 为节点和组件注入通用属性
      * @param propsWrapper
@@ -837,7 +865,7 @@ var ecs;
                         //没有指定数组内的类型
                         if (valueStyle.type.length === 0) {
                             component[pname] = pname in propsWrapper ?
-                                propsWrapper[pname] : valueStyle.default;
+                                propsWrapper[pname] : [];
                         }
                         else {
                             var innerType = valueStyle.type[0];
@@ -847,7 +875,7 @@ var ecs;
                                 case 'boolean':
                                     //指定了数组内容为基本类型
                                     component[pname] = pname in propsWrapper ?
-                                        propsWrapper[pname] : valueStyle.default;
+                                        propsWrapper[pname] : [];
                                     break;
                                 default:
                                     //指定了数组内容为引用类型
@@ -858,7 +886,7 @@ var ecs;
                                         });
                                     }
                                     else {
-                                        component[pname] = valueStyle.default;
+                                        component[pname] = [];
                                     }
                                     break;
                             }
